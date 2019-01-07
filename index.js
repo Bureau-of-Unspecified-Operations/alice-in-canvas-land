@@ -3,13 +3,23 @@ if (typeof (canvas.getContext) !== undefined) {
     cx = canvas.getContext("2d")
 }
 
-canvas.height = window.innerHeight
-canvas.width = window.innerWidth
+canvas.height = Math.floor(window.innerHeight / 4 * 3)
+canvas.width = Math.floor(window.innerWidth / 4 * 3)
 
-const CELL_SIZE = 20
-const ORIGIN = {x: 10,
-		y: 10
-	       }
+
+
+const BACKGROUND_COLOR = "rgb(0,0,0)"
+
+const CELL_SIZE = 40
+const SHIFT_TIME = 500 // in millis
+const SCREEN = {
+    width: 400,
+    height: 400
+}
+const ORIGIN = {
+    x: Math.floor((canvas.width - SCREEN.width) / 2),
+    y: Math.floor((canvas.height - SCREEN.height) / 2)
+}
 
 const SOLVED = 1;
 const UNSOLVED = 2;
@@ -148,18 +158,21 @@ function onKeyUp(event) {
     }
 }
 
+
 //##################################################3
 
-function QuestProgress() {
+
+
+/*function QuestProgress() {
     this.levelsCompleted = {"parthenon": false,
 			     "basilica": false,
 			     "edu": false,
 			     "christ": false
 			    }
-}
+}*/
 
 
-var player = {
+/*var player = {
     row: 0,
     col: 0,
     dir: [0,1],
@@ -169,11 +182,19 @@ var player = {
     },
     isMoveable: true,
     isMoving: false
-}
+}*/
 
 var cellPrototype = {
-    draw: function(mapOrigin, row, col, alpha) {
-	drawCellRect(mapOrigin, row, col, "rgb(0,255,0)")//default
+    draw: function(mapOrigin, row, col, delta, dir, alpha) {
+	//console.log("row,col =  " + row + ", " + col)
+	let relRow = row - mapOrigin[0]
+	let relCol = col - mapOrigin[1]
+	if (isInView(relRow, relCol, dir)) {
+	    let coord = gridToGlobal(relRow, relCol, delta, dir)
+	   // console.log("coord = " + coord)
+	    //console.log("row,col = " + row + ", " + col)
+	    drawGridRect(coord[0], coord[1], relRow, relCol, "rgb(0,255,255)")//default
+	}
     },
     isObstacle: false,
     object: null
@@ -189,36 +210,94 @@ function emptyCell() {
 // HELPER FUNCTIONS
 //###############################
 
-//gives leeway of one cell for "are you in the screen?"
-function isInView(mapOrigin, row, col) {
-    var newRow = row - mapOrigin[0]
-    var newCol = col - mapOrigin[1]
-    if ((newRow < -1) || (newRow > Math.floor(canvas.width / CELL_SIZE) + 1) ||
-	(newCol < -1) || (newCol > Math.floor(canvas.height / CELL_SIZE) + 1)) {
+//if pre of post dir row/col is inside the screen, you will be drawn
+function isInView(preRow, preCol, dir) {
+   
+   // console.log("preR,C = " + preRow + ", " + preCol)
+    var postRow = drawIncRow(preRow, dir)
+    var postCol = drawIncCol(preCol, dir)
+    var maxR = Math.floor(SCREEN.height / CELL_SIZE)
+    var maxC = Math.floor(SCREEN.width / CELL_SIZE)
+    if (((preRow < 0) && (postRow < 0)) ||
+	((preRow >= maxR) && (postRow >= maxR)) ||
+	((preCol < 0) && (postCol < 0)) ||
+	((preCol >= maxC) && (postCol >= maxC))
+       ) {
+//	console.log("isInView = false")
 	return false
     }
-    else return true
+    else {
+//	console.log("isInView = true")
+	return true
+    }
 }
 
-function drawCellRect(mapOrigin, row, col, color) {
-    if (isInView(mapOrigin, row, col)) {
-	var coord = gridToGlobal(row - mapOrigin[0], col - mapOrigin[1])
-	orig = cx.fillStyle
-	cx.fillStyle = color
-	cx.fillRect(coord[0], coord[1], CELL_SIZE, CELL_SIZE)
-	cx.fillStyle = orig
-    }
+//preCOndition: row/col/origin/dir must be valide "should be drawn"
+//return [x,y]
+// good for static or animation (via delta)
+function gridToGlobal(row, col, delta, dir) {
+    var x = ORIGIN.x - Math.floor(delta * dir[0] * CELL_SIZE) + col * CELL_SIZE
+    var y = ORIGIN.y - Math.floor(delta * dir[1] * CELL_SIZE) + row * CELL_SIZE
+    return [x,y]
+}
+
+function drawGridRect(x, y, row, col, color) {
+    orig = cx.fillStyle
+    cx.fillStyle = "rgb(0,0,0)"
+    cx.fillRect(x, y, CELL_SIZE, CELL_SIZE)
+    cx.fillStyle = color
+    let gap = Math.floor(CELL_SIZE / 10)
+    cx.fillRect(x + gap, y + gap, CELL_SIZE - 2 * gap, CELL_SIZE - 2 * gap)
+  /*  cx.fillStyle = "rgb(20,20,20)"
+    cx.font = "12px Georgia"
+    cx.fillText("(" + row + "," + col + ")",x + gap * 2, y + 5 * gap) */
+    cx.fillStyle = orig
+}
+
+function clearCanvas() {
+    let orig = cx.fillStyle
+    cx.fillStyle = BACKGROUND_COLOR
+    cx.fillRect(0, 0, canvas.width, canvas.height)
+    cx.fillStyle = orig
+}
+
+function clearScreen() {
+    let orig = cx.fillStyle
+    cx.fillStyle = "rgb(100,100,100)"
+    cx.fillRect(ORIGIN.x, ORIGIN.y, SCREEN.width, SCREEN.height)
+    cx.fillStyle = orig
+}
+
+function clearNonScreen() {
+    let orig = cx.fillStyle
+    cx.fillStyle = BACKGROUND_COLOR
+    cx.fillRect(0, 0, ORIGIN.x, canvas.height)
+    cx.fillRect(0, 0, canvas.width, ORIGIN.y)
+    cx.fillRect(0, SCREEN.height + Math.floor((canvas.height - SCREEN.height) / 2), canvas.width, ORIGIN.y)
+    cx.fillRect(SCREEN.width + Math.floor((canvas.width - SCREEN.width) / 2), 0, ORIGIN.x, canvas.height)
+    cx.fillStyle = orig
 }
 
 function incRow(row, dir) {
-    return row + dir[0]
+    return row + dir[1]
 }
 
 function incCol(col, dir) {
-    return col + dir[1]
+    return col + dir[0]
 }
 
-function canFrameShift(map, row, col, dir) {
+function drawIncRow(row, dir){
+    return row - dir[1]
+}
+
+function drawIncCol(col, dir) {
+    return col - dir[0]
+}
+
+
+
+
+/*function canFrameShift(map, row, col, dir) {
     console.log("in canframeshift")
     if (!map.hasObjectAt(row, col)) {
 	console.log("map does not have object at rowcol")
@@ -234,7 +313,7 @@ function canFrameShift(map, row, col, dir) {
 	}
 	else return false
     }
-}
+}*/
 
 function Array2d(rows, cols) {
     this.rows = rows
@@ -248,12 +327,6 @@ function Array2d(rows, cols) {
     }
 }
 
-function gridToGlobal(row, col) {
-    var x = ORIGIN.x + col * CELL_SIZE
-    var y = ORIGIN.y + row * CELL_SIZE
-    return [x, y]
-}
-
 
 
 //#####################################
@@ -264,10 +337,10 @@ var mapPrototype = {
     rows: 0,
     cols: 0,
     map: null,
-    draw: function(mapOrigin, litCells) {
+    draw: function(mapOrigin, delta, dir, litCells) {
 	for (row = 0; row < this.rows; row++) {
 	    for (col = 0; col < this.cols; col++) {
-		this.map.get(row, col).draw(mapOrigin, row, col, 0)
+		this.map.get(row, col).draw(mapOrigin, row, col, delta, dir, 0)
 	    }
 	}
     },
@@ -299,18 +372,20 @@ var mapPrototype = {
 }
 
 var worldPrototype = {
-    row: 0,
-    col: 0,
+    row: 5,
+    col: 5,
     map: null,
     light: null,
     objList: [],
-    player: player,
+   // player: player,
     eventLogic: function(worldEvent) {
 	console.log(worldEvent) // TO BE REPLACED BY EACH WORLD
     },
     draw: function () {
-	this.map.draw([this.row, this.col], [])
-	this.player.draw([this.row, this.col], this.player.row, this.player.col, 0)
+	clearScreen()
+//	console.log("orig [" + this.row + ", " + this.col + "]")
+	this.map.draw([this.row, this.col], 0, [0,0], [])
+//	this.player.draw([this.row, this.col], this.player.row, this.player.col, 0)
     },
     checkPortals: function(row, col) {
 	this.map.portals.forEach(function(portal) {
@@ -327,11 +402,9 @@ var worldPrototype = {
 
 
 function overWorldMap(progress) {
-    var rows = 30
-    var cols = 30
     let map = Object.create(mapPrototype)
-    map.rows = 30
-    map.cols = 30
+    map.rows = 20
+    map.cols = 20
     map.map = new Array2d(map.rows, map.cols)
     for (row = 0; row < map.map.rows; row++) {
 	for (col = 0; col < map.map.cols; col++) {
@@ -339,54 +412,85 @@ function overWorldMap(progress) {
 	    map.map.add(row, col, newCell)
 	}
     }
-    console.log(map.map)
+  //  console.log(map.map)
     return map
 }
 	    
  
 
 function overWorld(progress, frameShift) {
-    console.log(frameShift)
     let overWorld = Object.create(worldPrototype, {
 	map: {value: overWorldMap(progress)}	
     })
     overWorld.eventLogic = function(worldEvent) {
-	console.log("in overworld event Logic")
 	if (dirMap.has(worldEvent)) {
-	    if(canFrameShift(overWorld.map, overWorld.row, overWorld.col, dirMap.get(worldEvent))) {
+	   /* if(canFrameShift(overWorld.map, overWorld.row, overWorld.col, dirMap.get(worldEvent))) {
 		console.log("can frame shift")
 		var movingObjects = overWorld.objList.filter(obj => obj.isMoving)
-		frameShift(overWorld.map, overWorld.row, overWorld.col, dirMap.get(worldEvent),
-			       movingObjects, overWorld.checkPortals)
-	    }
+		var dir = dirMap.get(worldEvent)
+		frameShift(overWorld.map, [overWorld.row, overWorld.col], dir,
+			   movingObjects)
+		overWorld.row = incRow(overWorld.row, dir)
+		overWorld.col = incCol(overWorld.col, dir)
+		overWorld.draw()
+		}*/
+	    let dir = dirMap.get(worldEvent)
+	    frameShift(overWorld.map, [overWorld.row, overWorld.col], dir)
+	    overWorld.row = incRow(overWorld.row, dir)
+	    overWorld.col = incCol(overWorld.col, dir)
+	    overWorld.draw()
 	}
 	else if (worldEvent === PRIMARY) {
-	    overWorld.map.inspect(incRow(player.row, player.dir), incCol(player.col, player.dir))
+	   // overWorld.map.inspect(incRow(player.row, player.dir), incCol(player.col, player.dir))
 	    overWorld.draw()
 	}
 	else if (worldEvent === SECONDARY) {
 	    //no objects to push here
 	}
     }	
-    overWorld.map.addObject(0, 1, overWorld.player)
+   // overWorld.map.addObject(0, 1, overWorld.player)
     return overWorld
 }
 
-function frameShift(map, row, col, dir, movingObjects, callback) {
-    console.log("frame shift!")
+function frameShift(map, mapOrigin, dir) {
+    // console.log("in frame shift")
+    //console.log(mapOrigin)
+    //console.log(dir)
+    //animate the map shifting place, have moving objects drawn where they started
+    // update the moving objects to their new location
+    // tell the world it's new origin
+   /* movingObjects.forEach(function(obj) {
+	obj.row = incRow(obj.row, dir)
+	obj.col = incCol(obj.col, dir)
+	})*/
+    var startTime = new Date()
+  //  console.log("startTime = " + startTime.getTime())
+    function animate() {
+	let curTime = new Date()
+	let delta = (curTime.getTime() - startTime.getTime()) / SHIFT_TIME
+	//	console.log("curTime = " + curTime.getTime())
+	clearScreen()
+	map.draw(mapOrigin, delta, dir, [])
+	clearNonScreen()
+	if (curTime.getTime() - startTime.getTime() < SHIFT_TIME) {
+	    window.requestAnimationFrame(animate)
+	}
+    }
+    window.requestAnimationFrame(animate)
+    
 }
 
 var universe = {
-    questProgress: new QuestProgress(),
-    questTriggers: [],
-    overlays: [],
+   // questProgress: new QuestProgress(),
+   // questTriggers: [],
+   // overlays: [],
     activeWorld: overWorld(this.questProgress, frameShift),
     startGame:  function() {
 	registerEventListeners()
 	keyData.logic = this.activeWorld.eventLogic
 	this.activeWorld.draw()
     },
-    changeEventLogic: function(logic) {
+    /*changeEventLogic: function(logic) {
 	keyData.logic = logic
     },
     addOverlay: function(overlay) {
@@ -394,7 +498,7 @@ var universe = {
     },
     removeOverlay: function(overlay) {
 	this.overlays.splice(this.overlays.indexOf(overlay), 1)
-    }
+    }*/
     
 }
 
