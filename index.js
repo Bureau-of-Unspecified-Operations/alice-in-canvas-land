@@ -158,6 +158,10 @@ function onKeyUp(event) {
     }
 }
 
+function blockLogic(logic) {
+    console.log("blocking logic")
+}
+
 
 //##################################################3
 
@@ -169,36 +173,56 @@ function onKeyUp(event) {
 			     "edu": false,
 			     "christ": false
 			    }
-}*/
+			    }*/
 
-
-/*var player = {
-    row: 0,
-    col: 0,
-    dir: [0,1],
-    draw: function(mapOrigin, row, col, alpha) {
-	drawCellRect(mapOrigin, row, col, "rgb(255,0,0)")
-	console.log("in draw")
-    },
-    isMoveable: true,
-    isMoving: false
-}*/
-
-var cellPrototype = {
+var drawable = {
     draw: function(mapOrigin, row, col, delta, dir, alpha) {
-	//console.log("row,col =  " + row + ", " + col)
+//	console.log(`draw: orig=${mapOrigin} rox,col = [${row},${col}] delta=${delta}`)
 	let relRow = row - mapOrigin[0]
 	let relCol = col - mapOrigin[1]
 	if (isInView(relRow, relCol, dir)) {
 	    let coord = gridToGlobal(relRow, relCol, delta, dir)
-	   // console.log("coord = " + coord)
-	    //console.log("row,col = " + row + ", " + col)
-	    drawGridRect(coord[0], coord[1], relRow, relCol, "rgb(0,255,255)")//default
+	   // console.log(`coord = ${coord} relr,c=[${relRow},${relCol}]`)
+	    this.drawImg(coord[0], coord[1], alpha)
+	   // drawGridRect(coord[0], coord[1], relRow, relCol, "rgb(0,255,255)")//default
 	}
     },
-    isObstacle: false,
-    object: null
+    inc: function(dir) {
+	this.row += dir[1]
+	this.col += dir[0]
+    }
 }
+
+
+var player = Object.create(drawable, {
+    row: {value: 10,
+	  writable: true},
+    col: {value: 10,
+	  writable: true},
+    dir: {value: [0,1]},
+    drawImg: {value:  function(x, y, alpha) {
+	console.log("drawing Player x,y = " + x + ", " + y)
+	drawGridRect(x, y, "rgb(255,0,0)")
+
+    }},
+    isMoveable: {value: true},
+    isMoving: {value: false,
+	       writable: true}
+})
+
+
+console.log(player)
+
+
+    
+
+var cellPrototype = Object.create(drawable, {
+    drawImg: {value: function(x, y, alpha) {
+	drawGridRect(x, y, "rgb(0,255,255)")//default
+	
+    }},
+    isObstacle: {value: false}
+})
 
 function emptyCell() {
     let cell = Object.create(cellPrototype)
@@ -236,12 +260,20 @@ function isInView(preRow, preCol, dir) {
 //return [x,y]
 // good for static or animation (via delta)
 function gridToGlobal(row, col, delta, dir) {
+    /*console.log(`r,c=[${row},${col}], delta=${delta}, dir=${dir}`)
+    console.log(`${delta * dir[0] * CELL_SIZE}`)
+    console.log(`${delta * dir[1] * CELL_SIZE}`)
+    console.log(typeof row)
+    console.log(typeof col)
+    console.log(typeof delta)
+    console.log(typeof dir)*/
     var x = ORIGIN.x - Math.floor(delta * dir[0] * CELL_SIZE) + col * CELL_SIZE
     var y = ORIGIN.y - Math.floor(delta * dir[1] * CELL_SIZE) + row * CELL_SIZE
+   // console.log(`x,y=${x},${y}`)
     return [x,y]
 }
 
-function drawGridRect(x, y, row, col, color) {
+function drawGridRect(x, y, color) {
     orig = cx.fillStyle
     cx.fillStyle = "rgb(0,0,0)"
     cx.fillRect(x, y, CELL_SIZE, CELL_SIZE)
@@ -377,7 +409,7 @@ var worldPrototype = {
     map: null,
     light: null,
     objList: [],
-   // player: player,
+    player: player,
     eventLogic: function(worldEvent) {
 	console.log(worldEvent) // TO BE REPLACED BY EACH WORLD
     },
@@ -385,7 +417,7 @@ var worldPrototype = {
 	clearScreen()
 //	console.log("orig [" + this.row + ", " + this.col + "]")
 	this.map.draw([this.row, this.col], 0, [0,0], [])
-//	this.player.draw([this.row, this.col], this.player.row, this.player.col, 0)
+	this.player.draw([this.row, this.col], this.player.row, this.player.col, 0, [0,0], 0)
     },
     checkPortals: function(row, col) {
 	this.map.portals.forEach(function(portal) {
@@ -422,6 +454,9 @@ function overWorld(progress, frameShift) {
     let overWorld = Object.create(worldPrototype, {
 	map: {value: overWorldMap(progress)}	
     })
+    console.log(overWorld.objList)
+    overWorld.objList.push(player)
+    console.log(overWorld.objList)
     overWorld.eventLogic = function(worldEvent) {
 	if (dirMap.has(worldEvent)) {
 	   /* if(canFrameShift(overWorld.map, overWorld.row, overWorld.col, dirMap.get(worldEvent))) {
@@ -435,10 +470,8 @@ function overWorld(progress, frameShift) {
 		overWorld.draw()
 		}*/
 	    let dir = dirMap.get(worldEvent)
-	    frameShift(overWorld.map, [overWorld.row, overWorld.col], dir)
-	    overWorld.row = incRow(overWorld.row, dir)
-	    overWorld.col = incCol(overWorld.col, dir)
-	    overWorld.draw()
+	    frameShift(overWorld.map, [overWorld.row, overWorld.col], dir, overWorld.objList, overWorld)
+	    
 	}
 	else if (worldEvent === PRIMARY) {
 	   // overWorld.map.inspect(incRow(player.row, player.dir), incCol(player.col, player.dir))
@@ -452,17 +485,9 @@ function overWorld(progress, frameShift) {
     return overWorld
 }
 
-function frameShift(map, mapOrigin, dir) {
-    // console.log("in frame shift")
-    //console.log(mapOrigin)
-    //console.log(dir)
-    //animate the map shifting place, have moving objects drawn where they started
-    // update the moving objects to their new location
-    // tell the world it's new origin
-   /* movingObjects.forEach(function(obj) {
-	obj.row = incRow(obj.row, dir)
-	obj.col = incCol(obj.col, dir)
-	})*/
+function frameShift(map, mapOrigin, dir, movingObjects, overWorld) {
+    var prevLogic = keyData.logic
+    keyData.logic = blockLogic
     var startTime = new Date()
   //  console.log("startTime = " + startTime.getTime())
     function animate() {
@@ -471,9 +496,24 @@ function frameShift(map, mapOrigin, dir) {
 	//	console.log("curTime = " + curTime.getTime())
 	clearScreen()
 	map.draw(mapOrigin, delta, dir, [])
+	movingObjects.forEach(function(obj) {
+	   // console.log(obj)
+	    obj.draw(mapOrigin, obj.row, obj.col, 0, dir)
+	})
 	clearNonScreen()
 	if (curTime.getTime() - startTime.getTime() < SHIFT_TIME) {
 	    window.requestAnimationFrame(animate)
+	}
+	else {
+	    overWorld.row = incRow(overWorld.row, dir)
+	    overWorld.col = incCol(overWorld.col, dir)
+	   // console.log(overWorld.player)
+	    overWorld.player.inc(dir)
+	    overWorld.draw()
+	    keyData.logic = prevLogic
+	    if (keyData.keyStack.length !== 0) {
+		overWorld.eventLogic(keyData.keyStack[keyData.keyStack.length - 1])
+	    }
 	}
     }
     window.requestAnimationFrame(animate)
