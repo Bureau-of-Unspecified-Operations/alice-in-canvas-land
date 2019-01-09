@@ -14,6 +14,7 @@ const TEXT_FONT = "20px Arial"
 const TEXT_COLOR = "rgb(0,0,0)"
 
 const TEST_STRING = "hello, my name is joe, I want to tell you all about what I have been up to lately. I have to make way more filler text than I expected which is why none of this means anything unless you subscribe to iceberg theory where even if I'm not trying to inject any meaning, tunconscious event in my mind influence my writing in a such a way as to make my opinion about my work irrelevant"
+const TO_STRING = "You can't tell what's different, but the world is not the same as it just was...."
 
 const CELL_SIZE = 40
 const SHIFT_TIME = 300 // in millis
@@ -41,6 +42,23 @@ const RIGHT = "right"
 const UP = "up"
 const DOWN = "down"
 const TEXT_FINISHED = -1
+const SECRET_SPAWN = 0
+const MAIN_PORTAL_SPAWN = 1
+
+const PROGRESS = 0 //3######################### edit
+
+//###################################
+// GLOBAL DATASTRUCTURES
+//##################################
+
+
+
+const questProgress = {
+    greece: UNSOLVED,
+    france: UNSOLVED,
+    egypt: UNSOLVED,
+    rome: UNSOLVED
+}
 
 const dirMap = new Map()
 dirMap.set(LEFT, [-1, 0])
@@ -49,51 +67,11 @@ dirMap.set(RIGHT, [1, 0])
 dirMap.set(DOWN, [0, 1])
 
 
-/*
-class Obj {
-    draw(x, y, alpha)
-    getBoundary()
-    getOrigin() grid ref
-
-    - isMoveable
-    - isMoving
-    - x, y
-}
-
-class Map {
-    draw(x, y, lightGetData()) x,y are global
-    grab(x, y) refer to grid, not global
-    inspect(x, y) grid ref
-    isObstacleAt(x, y)
-    getObjectAt(x, y)
-    hasObject
-    gridToGlobal(x, y, row, col) return x, y
-}
-
-class World {
-    isCollision(x, y)
-    
-    - (int, int)  origin  (origin is boundary of last shade before back (alpha ref))
-    - (int, int) screen  (yeeeeeah)
-    - [obj] objList
-
-function frameShifter(map, origSrc, origTrg, dir, movingObjects, callback) {
-    loop: stepMap() drawObjects
-    objects.isMoving = false
-    removeObj from src grid, add to trg grid
-    update objOrig
-    callback
-}
-
-*/
-
-//##################################
-// IMPORTANT OBJECTS
-//##################################
 var keyData =  {
     keyStack: new Array(),
     isKeyNew:  new Map(),
-    logic: null
+    logic: null,
+    isBlocking: false
 }
 
 keyData.isKeyNew.set(LEFT, true)
@@ -134,7 +112,6 @@ function onKeyPress(event) {
 	keyData.logic(INSPECT)
     }
     else if (event.keyCode == SECONDARY && keyData.isKeyNew.get(GRAB)) {
-	console.log("key secondary pressed")
 	keyData.isKeyNew.set(GRAB, false)
 	keyData.logic(GRAB)
     }
@@ -176,17 +153,7 @@ function blockLogic(logic) {
 
 
 //##################################################3
-
-
-
-/*function QuestProgress() {
-    this.levelsCompleted = {"parthenon": false,
-			     "basilica": false,
-			     "edu": false,
-			     "christ": false
-			    }
-			    }*/
-
+//###################################################
 var drawable = {
     draw: function(mapOrigin, row, col, delta, dir, alpha) {
 //	console.log(`draw: orig=${mapOrigin} rox,col = [${row},${col}] delta=${delta}`)
@@ -236,12 +203,12 @@ var player = Object.create(drawable, {
     }}
 })
 
-function rock() {
+function rock(row, col) {
     var rock = Object.create(drawable, {
-    row: {value: 4,
+    row: {value: row,
 	  writable: true
 	 },
-    col: {value: 5,
+    col: {value: col,
 	  writable: true
 	 },
     drawImg: {value: function(x, y, alpha) {
@@ -284,6 +251,10 @@ function textOverlay(text) {
 	if (worldEvent === INSPECT) {
 	    console.log(overlay)
 	    overlay.step()
+	}
+
+	if (worldEvent === GRAB) {
+	    overlay.prevLogic(GRAB)
 	}
     }
     overlay.curText = text
@@ -472,6 +443,18 @@ function drawIncCol(col, dir) {
 }
 
 
+function singleCellPortal(row, col, world, spawn) {
+    var portal = {
+	contains: function(r, c) {
+	    return (row === r && col === c)
+	},
+	world: world,
+	spawn: spawn
+    }
+    return portal
+}
+
+
 
 // ignores possibility of pushingn an object that touches a movable obj, cuz i don't plan on this happening
 function canFrameShift(map, row, col, dir) {
@@ -506,7 +489,9 @@ function Array2d(rows, cols) {
 }
 
 
-function frameShift(map, mapOrigin, dir, movingObjects, overWorld) {
+function frameShift(map, mapOrigin, dir, movingObjects, world) {
+   // console.log("in frameshift")
+   // console.log(world)
     var prevLogic = keyData.logic
     keyData.logic = blockLogic
     var startTime = new Date()
@@ -526,23 +511,47 @@ function frameShift(map, mapOrigin, dir, movingObjects, overWorld) {
 	    window.requestAnimationFrame(animate)
 	}
 	else {
-	    overWorld.row = incRow(overWorld.row, dir)
-	    overWorld.col = incCol(overWorld.col, dir)
+	    world.row = incRow(world.row, dir)
+	    world.col = incCol(world.col, dir)
+	    //console.log(movingObjects)
 	    movingObjects.forEach(function(obj) {
 		obj.row = incRow(obj.row, dir)
 		obj.col = incCol(obj.col, dir)
 	    })
 	    //overWorld.player.inc(dir)
-	    overWorld.draw()
+	    world.draw()
 	    keyData.logic = prevLogic
-	  //  overWorld.checkPortals()
-	    if (keyData.keyStack.length !== 0) {
-		overWorld.eventLogic(keyData.keyStack[keyData.keyStack.length - 1])
+	    world.map.triggers.forEach(function(trigger) {
+		if (trigger.isTriggered()) {
+		    trigger.overlay.registerLogic(world.eventLogic)
+		    trigger.overlay.registerCallback(world.overlayCallback)
+		    trigger.overlay.step()
+		}
+	    })
+	    //order of this logic is important. if portal, nothing else should happen
+	    if (world.isInPortal(player.row, player.col)) {
+		world.useActivePortal(player.row, player.col)
+	    }
+	    else {
+		//neither of these should block the other. prevents object drag
+		if (keyData.isKeyNew.get(GRAB)) {
+		    world.eventLogic(GRAB)
+		}
+		if (keyData.keyStack.length !== 0) {
+		    world.eventLogic(keyData.keyStack[keyData.keyStack.length - 1])
+		}
 	    }
 	}
     }
     window.requestAnimationFrame(animate)
-    
+}
+
+function swapActiveWorlds(world, spawn) {
+   // console.log("in world swap")
+    keyData.logic = blockLogic
+    universe.activeWorld = world(spawn)
+   // console.log(universe.activeWorld)
+    universe.startGame()
 }
 
 
@@ -554,7 +563,6 @@ var mapPrototype = {
     rows: 0,
     cols: 0,
     map: null,
-    objList: [],
     draw: function(mapOrigin, delta, dir, litCells) {
 	for (row = 0; row < this.rows; row++) {
 	    for (col = 0; col < this.cols; col++) {
@@ -573,7 +581,7 @@ var mapPrototype = {
 	}
     },
     hasObstacleAt: function(row, col) {
-	console.log(`r,c = ${row},${col}`)
+//	console.log(`r,c = ${row},${col}`)
 	return this.map.get(row, col).isObstacle
     },
     hasObjectTouching: function(row, col) {
@@ -595,16 +603,28 @@ var mapPrototype = {
 var worldPrototype = {
     row: 0,
     col: 0,
-    map: null,
     light: null,
     player: player,
-    centerOrigin: function() {
-	console.log(this)
-	this.row = this.map.playerStartRow - CENTER_ROW
-	this.col = this.map.playerStartCol - CENTER_COL
-	player.row = this.map.playerStartRow
-	player.col = this.map.playerStartCol
-	console.log(`r,c=${this.row},${this.col}, screen rc=${SCREEN.centerRow},${SCREEN.centerCol}`)
+    centerOrigin: function(spawn) {
+	console.log(spawn)
+	var playerRow = 0
+	var playerCol = 0
+//	console.log("center")
+	if (spawn === SECRET_SPAWN) {
+	   // console.log("in secrete")
+	    playerRow = this.map.secretRow
+	    playerCol = this.map.secretCol
+	}
+	else {
+	   // console.log("else")
+	    playerRow = this.map.playerStartRow
+	    playerCol = this.map.playerStartCol
+	}
+	this.row = playerRow - CENTER_ROW
+	this.col = playerCol - CENTER_COL
+	player.row = playerRow
+	player.col = playerCol
+//	console.log(`r,c=${this.row},${this.col}, screen rc=${SCREEN.centerRow},${SCREEN.centerCol}`)
     },
     inspect: function() {
 	
@@ -615,14 +635,26 @@ var worldPrototype = {
 //	console.log("orig [" + this.row + ", " + this.col + "]")
 	this.map.draw([this.row, this.col], 0, [0,0], [])
     },
-    checkPortals: function(row, col) {
+    isInPortal: function(row, col) {
+	var v = false
 	this.map.portals.forEach(function(portal) {
 	    if (portal.contains(row, col)) {
-		
+	//	console.log("was in a portal")
+		v = true
+	    }
+	})
+	return v
+    },
+    useActivePortal: function(row, col) {
+	this.map.portals.forEach(function(portal) {
+	    if (portal.contains(row, col)) {
+	//	console.log("swaping")
+		swapActiveWorlds(portal.world, portal.spawn)
 	    }
 	})
     },
     eLogic: function(worldEvent) {
+
 	if (dirMap.has(worldEvent)) {
 	    let dir = dirMap.get(worldEvent)
 	    let movingObjects = this.map.objList.filter(obj => obj.isMoving)
@@ -632,9 +664,6 @@ var worldPrototype = {
 	}
 	else if (worldEvent === INSPECT) {
 	    let adj = player.getAdjCells()
-	   /* console.log("in inspect")
-	    console.log(this)
-	    console.log(self)*/
 	    var realthis = this
 	    adj.forEach(function(coord) {
 		let row = coord[0]
@@ -650,13 +679,16 @@ var worldPrototype = {
 		}
 	    })	   // overWorld.draw()
 	}
-	else if (worldEvent === GRAB) {
+	
+	if (worldEvent === GRAB) {
 	    var isGrabbed = !keyData.isKeyNew.get(GRAB) //ugly, backwards cuz of earlier keystack plan
-	    console.log(player.getAdjCells())
 	    var adj = player.getAdjCells()
 	    this.map.objList.forEach(function(obj) {
 		adj.forEach(function(coord) {
-		    if (obj.contains(coord[0], coord[1])) obj.isMoving = isGrabbed
+		    if (isGrabbed) {
+			if (obj.contains(coord[0], coord[1])) obj.isMoving = true
+		    }
+		    else if (obj !== player) obj.isMoving = false
 		})
 	    })
 	}
@@ -668,12 +700,16 @@ var worldPrototype = {
 //##########################################################
 
 
-function parthenonMap(progress) {
+function parthenonMap() {
     let map = Object.create(mapPrototype)
-    map.rows = 5
-    map.cols = 5
-    map.playerStartRow = 0
-    map.playerStartCol = 0
+    map.rows = 53
+    map.cols = 26
+    map.playerStartRow = 1
+    map.playerStartCol = 1
+    map.objList = []
+    map.portals = []
+    map.portals.push(singleCellPortal(0,0,overWorld, SECRET_SPAWN))
+   // console.log(map.portals)
     map.map = new Array2d(map.rows, map.cols)
     for (row = 0; row < map.rows; row ++) {
 	for (col = 0; col < map.cols; col ++) {
@@ -681,30 +717,53 @@ function parthenonMap(progress) {
 	    map.map.add(row, col, newCell)
 	}
     }
+    map.objList.push(rock(0,1))
+    map.map.get(2,2).overlay = textOverlay(TEST_STRING)
+    map.triggers = []
+    var trigger = {
+	isTriggered: function() {
+	    var rock = map.objList[0]
+	    if (rock.row === 4 && rock.col === 4 && rock.isMoving) {
+		return true
+	    }
+	    return false
+	},
+	overlay: textOverlay(TO_STRING)
+    }
+    map.triggers.push(trigger)
 
     return map
 }
 
-function ancientGreece(progress) {
+function ancientGreece(spawn) {
     let greece = Object.create(worldPrototype, {
-	map: {value: parthenonMap(progress)}
+	map: {value: parthenonMap()}
     })
-    greece.centerOrigin()
+    greece.centerOrigin(spawn)
     greece.map.objList.push(player)
+    
     greece.eventLogic = function(worldEvent) {
 	greece.eLogic(worldEvent)
+    }
+    greece.overlayCallback = function() {
+	greece.draw()
     }
 
     return greece
     
 }
 
-function overWorldMap(progress) {
+function overWorldMap() {
     let map = Object.create(mapPrototype)
     map.rows = 10
     map.cols = 10
-    map.playerStartRow = 0
+    map.playerStartRow = 1
     map.playerStartCol = 0
+    map.secretRow = 3
+    map.secretCol = 3
+    map.objList = []
+    map.triggers = []
+    map.portals = [singleCellPortal(0,0, ancientGreece, MAIN_PORTAL_SPAWN)]
     map.map = new Array2d(map.rows, map.cols)
     for (row = 0; row < map.map.rows; row++) {
 	for (col = 0; col < map.map.cols; col++) {
@@ -719,82 +778,32 @@ function overWorldMap(progress) {
 	    
  
 
-function overWorld(progress) {
+function overWorld(spawn) {
+    console.log("spawn " + spawn)
     let overWorld = Object.create(worldPrototype, {
-	map: {value: overWorldMap(progress)}	
+	map: {value: overWorldMap()}	
     })
-    overWorld.centerOrigin()
+    overWorld.centerOrigin(spawn)
     overWorld.map.objList.push(player)
-    overWorld.map.objList.push(rock())
+    overWorld.map.objList.push(rock(4,5))
     overWorld.overlayCallback = function() {
 	overWorld.draw()
     }
     overWorld.eventLogic = function(worldEvent) {
 	overWorld.eLogic(worldEvent)
     }
-   /* overWorld.eventLogic = function(worldEvent) {
-	if (dirMap.has(worldEvent)) {
-	    let dir = dirMap.get(worldEvent)
-	    let movingObjects = overWorld.map.objList.filter(obj => obj.isMoving)
-	    if (canFrameShift(overWorld.map, incRow(player.row, dir), incCol(player.col, dir), dir)) {
-		frameShift(overWorld.map, [overWorld.row, overWorld.col], dir, movingObjects, overWorld)
-	    }	    
-	}
-	else if (worldEvent === INSPECT) {
-	    let adj = player.getAdjCells()
-	    adj.forEach(function(coord) {
-		let row = coord[0]
-		let col = coord[1]
-		let cell = overWorld.map.map.get(row, col)
-		console.log(`r,c = ${row},${col}`)
-		console.log(cell)
-		if (cell.overlay !== null) {
-		    let overlay =  cell.overlay
-		    overlay.registerLogic(overWorld.eventLogic)
-		    overlay.registerCallback(overWorld.overlayCallback)
-		    overlay.step()
-		}
-	    })	   // overWorld.draw()
-	}
-	else if (worldEvent === GRAB) {
-	    var isGrabbed = !keyData.isKeyNew.get(GRAB) //ugly, backwards cuz of earlier keystack plan
-	    console.log(player.getAdjCells())
-	    var adj = player.getAdjCells()
-	    overWorld.map.objList.forEach(function(obj) {
-		adj.forEach(function(coord) {
-		    if (obj.contains(coord[0], coord[1])) obj.isMoving = isGrabbed
-		})
-	    })
-	}
-    }	*/
-   // overWorld.map.addObject(0, 1, overWorld.player)
     return overWorld
 }
 
-
-
 var universe = {
-   // questProgress: new QuestProgress(),
-   // questTriggers: [],
-   // overlays: [],
-    activeWorld: ancientGreece(this.questProgress),
+    activeWorld: ancientGreece(MAIN_PORTAL_SPAWN),
     startGame:  function() {
-	registerEventListeners()
 	keyData.logic = this.activeWorld.eventLogic
 	this.activeWorld.draw()
-    },
-    /*changeEventLogic: function(logic) {
-	keyData.logic = logic
-    },
-    addOverlay: function(overlay) {
-	this.overlays.push(overlay)
-    },
-    removeOverlay: function(overlay) {
-	this.overlays.splice(this.overlays.indexOf(overlay), 1)
-    }*/
-    
+    }, 
 }
 
+registerEventListeners()
 universe.startGame()
 
 
