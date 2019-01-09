@@ -7,8 +7,8 @@ canvas.height = Math.floor(window.innerHeight / 4 * 3)
 canvas.width = Math.floor(window.innerWidth / 4 * 3)
 
 
-
-const BACKGROUND_COLOR = "rgb(0,0,0)"
+const BLACK = "rgb(0,0,0)"
+const BACKGROUND_COLOR = BLACK
 const TEXT_BACKGROUND_COLOR = "rgb(222,184,135)"
 const TEXT_FONT = "20px Arial"
 const TEXT_COLOR = "rgb(0,0,0)"
@@ -17,6 +17,7 @@ const TEST_STRING = "hello, my name is joe, I want to tell you all about what I 
 const TO_STRING = "You can't tell what's different, but the world is not the same as it just was...."
 
 const CELL_SIZE = 40
+const HALF_CELL = Math.floor(CELL_SIZE / 2)
 const SHIFT_TIME = 300 // in millis
 const SCREEN = {
     width: 400,
@@ -46,6 +47,19 @@ const SECRET_SPAWN = 0
 const MAIN_PORTAL_SPAWN = 1
 
 const PROGRESS = 0 //3######################### edit
+
+
+
+const mapData = new Map()
+mapData.set("greece", {
+    path: "map_jsons/greece.json",
+    template: null
+})
+
+
+
+
+
 
 //###################################
 // GLOBAL DATASTRUCTURES
@@ -278,6 +292,11 @@ function textOverlay(text) {
 }
 
 
+
+//#######################################################################3
+// CELLS AND MAP FEATURES MAKING THEM WORLDS AREALITY
+//########################################################################
+
     
 
 var cellPrototype = Object.create(drawable, {
@@ -294,6 +313,91 @@ function emptyCell(overlay) {
     return cell
 }
 
+function worldEdgeCell() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawGridRect(x, y, BLACK)
+    }
+    cell.isObstacle = true
+}
+
+function portalCell() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawGridRect(x, y, PORTAL_COLOR)
+    }
+    cell.isObstacle = false
+    return cell
+}
+
+function greekCol(size) {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, GREEK_FLOOR_COLOR)
+	drawCircl(x + HALF_CELL, y + HALF_CELL, size, GREEK_COL_COLOR)
+    }
+    cell.isObstacle = true
+    return cell
+}
+
+function bigCol() {
+    return greekCol(HALF_CELL)
+}
+
+function medCol() {
+    return greekCol(Math.floor(HALF_CELL * 3/4))
+}
+
+function smallCol() {
+    return greekCol(Math.floor(HALF_CELL / 2))
+}
+
+function greekWallCell() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, GREEK_WALL_COLOR)
+    }
+    cell.isObstacle = true
+    return cell
+}
+
+function greekFloorCell() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, GREEK_FLOOR_COLOR)
+    }
+    cell.isObstacle = false
+    return cell
+}
+
+
+
+
+
+function mapFromTemplate(template, cellMap) {
+    let rows = template.length
+    let cols = template[0].length
+    let map = new Array2d(rows, cols)
+    for (row = 0; row < rows; row ++) {
+	for (col = 0; col < cols; col ++) {
+	    let code = template[row][col]
+	    map.add(row, col, cellMap.get(code)()) //this is calling a function :)
+	}
+    }
+    return map
+}
+
+//######################################################################
+// OTHER MAP DATA
+//#####################################################################
+const greekCellMap = new Map()
+greekCellMap.set("0", worldEdgeCell)
+greekCellMap.set("1", portalCell)
+greekCellMap.set("2", bigCol)
+greekCellMap.set("3", medCol)
+greekCellMap.set("4", smallCol)
+greekCellMap.set("5", greekWallCell)
+greekCellMap.set("6", greekFloorCell)
 
 //###############################
 // HELPER FUNCTIONS
@@ -336,6 +440,22 @@ function gridToGlobal(row, col, delta, dir) {
     var y = ORIGIN.y - Math.floor(delta * dir[1] * CELL_SIZE) + row * CELL_SIZE
    // console.log(`x,y=${x},${y}`)
     return [x,y]
+}
+
+function drawRect(x, y, color) {
+    orig = cx.fillStyle
+    cx.fillStyle = color
+    cx.fillRect(x, y, CELL_SIZE, CELL_SIZE)
+    cx.fillStyle = orig
+}
+
+function drawCircl(x, y, r, color) {
+    let orig = cx.fillStyle
+    cx.fillStyle = color
+    cx.beginPath()
+    cx.arc(x, y, r, 0, Math.PI * 2)
+    cx.fill()
+    cx.fillStyle = orig
 }
 
 function drawGridRect(x, y, color) {
@@ -708,18 +828,14 @@ function parthenonMap() {
     map.playerStartCol = 1
     map.objList = []
     map.portals = []
-    map.portals.push(singleCellPortal(0,0,overWorld, SECRET_SPAWN))
-   // console.log(map.portals)
-    map.map = new Array2d(map.rows, map.cols)
-    for (row = 0; row < map.rows; row ++) {
-	for (col = 0; col < map.cols; col ++) {
-	    var newCell = emptyCell(null)
-	    map.map.add(row, col, newCell)
-	}
-    }
-    map.objList.push(rock(0,1))
-    map.map.get(2,2).overlay = textOverlay(TEST_STRING)
     map.triggers = []
+   // map.portals.push(singleCellPortal(0,0,overWorld, SECRET_SPAWN))
+   // console.log(map.portals)
+    map.map = mapFromTemplate(mapData.get("greece").template, greekCellMap)
+    
+   /* map.objList.push(rock(0,1))
+    map.map.get(2,2).overlay = textOverlay(TEST_STRING)
+    
     var trigger = {
 	isTriggered: function() {
 	    var rock = map.objList[0]
@@ -730,7 +846,7 @@ function parthenonMap() {
 	},
 	overlay: textOverlay(TO_STRING)
     }
-    map.triggers.push(trigger)
+    map.triggers.push(trigger)*/
 
     return map
 }
@@ -796,15 +912,41 @@ function overWorld(spawn) {
 }
 
 var universe = {
-    activeWorld: ancientGreece(MAIN_PORTAL_SPAWN),
+    activeWorld: null,
     startGame:  function() {
 	keyData.logic = this.activeWorld.eventLogic
 	this.activeWorld.draw()
     }, 
 }
 
-registerEventListeners()
-universe.startGame()
+function createUniverse() {
+    registerEventListeners()
+    universe.activeWorld = ancientGreece(MAIN_PORTAL_SPAWN)
+    universe.startGame()
+}
+
+
+//######################################333333333333333333333333333333333333333
+// LOADING AJAX STUFF AND KICK STARTING THE GAME
+//############################################################################
+var ajaxCompleted = 0
+console.log(Object.keys(mapData))
+var ajaxMax = Object.keys(mapData).length
+console.log(ajaxMax)
+
+for (const name of mapData.keys()) {
+    var req = new XMLHttpRequest()
+    req.addEventListener("load", function() {
+	let obj = JSON.parse(this.responseText)
+	mapData.get(name).template = obj
+	ajaxCompleted ++
+	if (ajaxCompleted >= ajaxMax) {
+	    createUniverse()
+	}
+    })
+    req.open("GET", mapData.get(name).path)
+    req.send()
+}
 
 
 /*clearCanvas()

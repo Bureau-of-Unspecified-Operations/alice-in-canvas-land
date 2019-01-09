@@ -1,0 +1,22 @@
+{
+  "name": "alice-in-canvas-land",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bureau-of-Unspecified-Operations/alice-in-canvas-land.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Bureau-of-Unspecified-Operations/alice-in-canvas-land/issues"
+  },
+  "homepage": "https://github.com/Bureau-of-Unspecified-Operations/alice-in-canvas-land#readme",
+  "devDependencies": {
+    "csvtojson": "^2.0.8"
+  }
+}
