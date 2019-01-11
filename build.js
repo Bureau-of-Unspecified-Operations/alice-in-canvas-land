@@ -1,10 +1,19 @@
 const fs = require("fs")
 
-const GREECE_READ = "map_csvs/greece.csv"
-const GREECE_WRITE = "map_jsons/greece.json"
-
-const greece_csv = fs.readFileSync(GREECE_READ, "utf8")
-
+const paths = [
+    {
+	read: "map_csvs/greece.csv",
+	write: "map_jsons/greece.json"
+    },
+    {
+	read: "map_csvs/overworld.csv",
+	write: "map_jsons/overworld.json"
+    },
+    {
+	read: "map_csvs/rome.csv",
+	write: "map_jsons/rome.json"
+    }
+]
 
 
 function csvToGrid(csv) {
@@ -18,6 +27,12 @@ function csvToGrid(csv) {
     return grid
 }
 
-console.log(csvToGrid(greece_csv))
+function convertAll() {
+    paths.forEach(function(path) {
+	let csv = fs.readFileSync(path.read, "utf8")
+	fs.writeFileSync(path.write, JSON.stringify(csvToGrid(csv)))
+    })
+}
 
-fs.writeFileSync(GREECE_WRITE, JSON.stringify(csvToGrid(greece_csv)))
+convertAll()
+    

@@ -7,21 +7,51 @@ canvas.height = Math.floor(window.innerHeight / 4 * 3)
 canvas.width = Math.floor(window.innerWidth / 4 * 3)
 
 
+//###########################################################################################################
+// GLOBALS GLOBALS GLOBALS GLOBALS
+//###########################################################################################################
+
+//#####################################
+// COLORS AND STYLINGS
+//#####################################
 const BLACK = "rgb(0,0,0)"
+const SILVER = "rgb(192,192,192)"
+const SIENNA = "rgb(160,82,45)"
+const BLUE = "rgb(0,0,255)"
+const HOT_PINK = "rgb(255,105,180)"
+const LIGHT_GREY = "rgb(220,220,220)"
+const RED = "rgb(255,0,0)"
+const ORANGE = "rgb(255,140,0)"
+
+
 const BACKGROUND_COLOR = BLACK
 const TEXT_BACKGROUND_COLOR = "rgb(222,184,135)"
 const TEXT_FONT = "20px Arial"
 const TEXT_COLOR = "rgb(0,0,0)"
 
+const GREEK_FLOOR_COLOR = LIGHT_GREY
+const GREEK_WALL_COLOR = SILVER
+const GREEK_COL_COLOR = SIENNA
+const PORTAL_COLOR = HOT_PINK
+
+
+
 const TEST_STRING = "hello, my name is joe, I want to tell you all about what I have been up to lately. I have to make way more filler text than I expected which is why none of this means anything unless you subscribe to iceberg theory where even if I'm not trying to inject any meaning, tunconscious event in my mind influence my writing in a such a way as to make my opinion about my work irrelevant"
 const TO_STRING = "You can't tell what's different, but the world is not the same as it just was...."
+const GREEK_VICTORY_TEXT = "You feel a rumbling deep in the earth. Something has important has happened somewhere, and you feel that your task here is complete."
+
+
+
+//####################################
+// CONST VALUES
+//###################################
 
 const CELL_SIZE = 40
 const HALF_CELL = Math.floor(CELL_SIZE / 2)
 const SHIFT_TIME = 300 // in millis
 const SCREEN = {
-    width: 400,
-    height: 400
+    width: 600,
+    height: 600
 }
 const CENTER_ROW = Math.floor(Math.floor(SCREEN.height / CELL_SIZE) / 2)
 const CENTER_COL= Math.floor(Math.floor(SCREEN.width / CELL_SIZE) / 2)
@@ -31,9 +61,20 @@ const ORIGIN = {
     y: Math.floor((canvas.height - SCREEN.height) / 2)
 }
 
+const MAIN_SPAWN = 0
+const GREECE_SPAWN = 1
+const ROME_SPAWN = 2
+const FRANCE_SPAWN = 3
+const EGYPT_SPAWN = 4
 
-const SOLVED = 1;
-const UNSOLVED = 2;
+
+
+
+//#####################################
+// ENUMS
+//#####################################
+const SOLVED = 0;
+const UNSOLVED = 1;
 const PRIMARY = 73 // "i"
 const SECONDARY = 71// "g"
 const INSPECT = "inspect"
@@ -43,28 +84,23 @@ const RIGHT = "right"
 const UP = "up"
 const DOWN = "down"
 const TEXT_FINISHED = -1
-const SECRET_SPAWN = 0
-const MAIN_PORTAL_SPAWN = 1
-
-const PROGRESS = 0 //3######################### edit
-
-
+//######################################
+// GLOBAL DATASTRUCTURES
+//######################################
 
 const mapData = new Map()
 mapData.set("greece", {
     path: "map_jsons/greece.json",
     template: null
 })
-
-
-
-
-
-
-//###################################
-// GLOBAL DATASTRUCTURES
-//##################################
-
+mapData.set("overworld", {
+    path: "map_jsons/overworld.json",
+    template: null
+})
+mapData.set("rome", {
+    path: "map_jsons/rome.json",
+    template: null
+})
 
 
 const questProgress = {
@@ -166,8 +202,14 @@ function blockLogic(logic) {
 }
 
 
-//##################################################3
-//###################################################
+//###########################################################################################################
+// 
+//###########################################################################################################
+
+
+
+
+/////////////////////////////////////////////////////
 var drawable = {
     draw: function(mapOrigin, row, col, delta, dir, alpha) {
 //	console.log(`draw: orig=${mapOrigin} rox,col = [${row},${col}] delta=${delta}`)
@@ -183,6 +225,12 @@ var drawable = {
     inc: function(dir) {
 	this.row += dir[1]
 	this.col += dir[0]
+    },
+    singleCellContains: function(row, col) {
+	return this.row == row && this.col == col
+    },
+    getSingleCellFrontier: function(dir) {
+	return [[incRow(this.row, dir), incCol(this.col, dir)]]
     }
 }
 
@@ -236,7 +284,7 @@ function rock(row, col) {
 	return rock.row === row && rock.col === col
     }
     rock.getFrontier = function(dir) {
-	return [incRow(rock.row, dir), incCol(rock.col, dir)]
+	return [[incRow(rock.row, dir), incCol(rock.col, dir)]]
     }
     return rock
 }
@@ -319,6 +367,7 @@ function worldEdgeCell() {
 	drawGridRect(x, y, BLACK)
     }
     cell.isObstacle = true
+    return cell
 }
 
 function portalCell() {
@@ -334,7 +383,7 @@ function greekCol(size) {
     let cell = Object.create(drawable)
     cell.drawImg = function(x, y, alpha) {
 	drawRect(x, y, GREEK_FLOOR_COLOR)
-	drawCircl(x + HALF_CELL, y + HALF_CELL, size, GREEK_COL_COLOR)
+	drawCircle(x + HALF_CELL, y + HALF_CELL, size, GREEK_COL_COLOR)
     }
     cell.isObstacle = true
     return cell
@@ -370,20 +419,472 @@ function greekFloorCell() {
     return cell
 }
 
+/////////////////////////
+
+function greekDoor() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawGenRect(x, y, CELL_SIZE * 3, CELL_SIZE * 3, SILVER)
+    }
+    cell.isObstacle = false
+    cell.isLink = true
+    return cell
+}
+
+function romeDoor() {
+    return greekDoor()
+}
+
+function franceDoor() {
+    return greekDoor()
+}
+
+function egyptDoor() {
+    return greekDoor()
+}
+
+function finalDoor() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawGenRect(x, y, CELL_SIZE * 4, CELL_SIZE * 6, SILVER)
+    }
+    cell.isObstacle = true
+    cell.isLink = true
+    return cell
+}
+
+function secretDoor() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawGenRect(x, y, CELL_SIZE * 2, CELL_SIZE * 2, SILVER)
+    }
+    cell.isObstacle = true
+    cell.isLink = true
+    return cell
+}
+
+function overworldTopWall() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, SIENNA)
+    }
+    cell.isObstacle = true
+    return cell
+}
+
+function overworldLeftWall() {
+    return overworldTopWall()
+}
+
+function overworldRightWall() {
+    return overworldTopWall()
+}
+
+function overworldBotWall() {
+    return overworldTopWall()
+}
+
+function blankObstacle() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {}
+    cell.isObstacle = true
+    return cell
+}
+
+function blankNonObstacle() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {}
+    cell.isObstacle = false
+    return cell
+}
+
+function torch() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, RED)
+    }
+    cell.isObstacle = true
+    return cell
+}
+
+function specialTorch() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, ORANGE)
+    }
+    cell.isObstacle = true
+    return cell
+}
+
+function overworldFloor() {
+    return greekFloorCell()
+}
+
+//////////////////////////////////////////
+
+function linkedCell(link, transform, isObstacle) {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	if (!link.hasBeenDrawn) {
+	    let coord = transform(x, y)
+	    link.drawImg(coord[0], coord[1], alpha)
+	}
+    }
+    cell.isObstacle = isObstacle
+    return cell
+}
+
+function romeAlcove(dir) {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, HOT_PINK)
+    }
+    cell.isObstacle = true
+    cell.isLink = true
+    return cell
+}
+
+function romeAlcoveTop() {
+    return romeAlcove([0,-1])
+}
+
+function romeAlcoveRight() {
+    return romeAlcove([1,0])
+}
+
+function romeAlcoveLeft() {
+    return romeAlcove([-1, 0])
+}
+
+////
+function romeFloorImg(dir) {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, BLUE)
+    }
+    cell.isObstacle = false
+    cell.isLink = true
+    return cell
+}
+
+function romeFloorImgTL() {
+    return romeFloorImg([1,1])
+}
+
+function romeFloorImgTR() {
+    return romeFloorImg([-1,1])
+}
+
+function romeFloorImgBL() {
+    return romeFloorImg([1,-1])
+}
+
+function romeFloorImgBR() {
+    return romeFloorImg([-1,-1])
+}
+////
+
+function romeWall() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, SIENNA)
+    }
+    cell.isObstacle = true
+    return cell
+}
+
+function romeFloor() {
+    return greekFloorCell()
+}
+
+function romeCorner(dir) {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, HOT_PINK)
+    }
+    cell.isObstacle = true
+    cell.isLink = true
+    return cell
+}
+
+function romeCornerTL() {
+    return romeCorner([1,1])
+}
+
+function romeCornerTR() {
+    return romeCorner([-1,1])
+}
+
+function romeCornerBL() {
+    return romeCorner([1,-1])
+}
+
+function romeCornerBR() {
+    return romeCorner([-1,-1])
+}
+
+//////////
+function romeMiddleRect(dir) {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, HOT_PINK)
+    }
+    cell.isObstacle = true
+    cell.isLink = true
+    return cell
+}
+
+function romeMiddleRectLeft() {
+    return romeMiddleRect(-1)
+}
+
+function romeMiddleRectRight() {
+    return romeMiddleRect(1)
+}
+
+///////////
+
+function romeSquare() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, HOT_PINK)
+    }
+    cell.isObstacle = true
+    cell.isLink = true
+    return cell
+}
+
+function romeVest(dir) {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, HOT_PINK)
+    }
+    cell.isObstacle = true
+    cell.isLink = true
+    return cell
+}
+
+function romeVestLeft() {
+    return romeVest(-1)
+}
+
+function romeVestRight() {
+    return romeVest(1)
+}
+
+function romeWeirdVest() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, HOT_PINK)
+    }
+    cell.isObstacle = true
+    cell.isLink = true
+    return cell
+}
 
 
 
 
+////////////////////////
+// OBJECTS
+///////////////////////
+
+function smallColObj(row, col) {
+    let obj = Object.create(drawable)
+    obj.drawImg = function(x, y, alpha) {
+	drawRect(x, y, GREEK_FLOOR_COLOR)
+	drawCircle(x + HALF_CELL, y + HALF_CELL, Math.floor(HALF_CELL / 2), GREEK_COL_COLOR)
+    }
+    obj.isMoving = false
+    obj.row = row
+    obj.col = col
+    obj.contains = obj.singleCellContains
+    obj.getFrontier = obj.getSingleCellFrontier
+    return obj
+}
+
+function deltaDir(delta, dir) {
+    let index = Math.floor(Math.abs(dir[0] + dir[1]) / 2)
+    let x = delta[1 - index] * dir[0]
+    let y = delta[index] * dir[1]
+    return [x, y]
+}
+
+function dist(p0,p1) {
+    let sum = 0
+    for (i = 0; i < p0.length; i ++) {
+	sum += Math.pow(Math.abs(p0[i] - p1[i]), 2)
+    }
+    return Math.sqrt(sum)
+}
+
+var turtle = {
+    x: 0,
+    y: 0,
+    beginPath: function() {
+	cx.beginPath()
+    }
+    moveTo: function(delta) {
+	this.x += delta[0]
+	this.y += delta[1]
+	cx.moveTo(this.x, this.y)
+	
+    },
+    lineTo: function(delta) {
+	this.x += delta[0]
+	this.y += delta[1]
+	cx.lineTo(this.x, this.y)
+    },
+    arcTo: function(delta, radius) {
+	let d = dist([this.x, this.y], [this.x + delta[0], this.y + delta[1]])
+	let theta = Math.asin(d / 2 / radius) * 2
+    },
+    closePath: function() {
+	cx.closePath()
+    }
+    stroke: function(color) {
+	let orig = cx.strokeStyle
+	cx.strokeStyle = color
+	cx.stroke()
+	cx.strokeStyle = orig
+    }
+    fill: function(color) {
+	let orig = cx.fillStyle
+	cx.fillStyle = color
+	cx.fill()
+	cx.fillStyle = orig
+    }
+}
+
+function basilicaCorner(row, col, dir) {
+    let obj = Object.create(drawable)
+    obj.drawImg = function(x, y, alpha) {
+	x = (dir[0] == 1) ? x : x + CELL_SIZE
+	y = (dir[1] == 1) ? y : y + CELL_SIZE
+
+	let orig = cx.fillStyle
+	cx.strokeStyle = BLUE
+	cx.beginPath()
+	let delta = deltaDir([0, CELL_SIZE],dir)
+	cx.moveTo(x + delta[0], y + delta[1])
+	let deltap = deltaDir([CELL_SIZE, 0], dir) //first corner
+	cx.arcTo(x, y, x + deltap[0], y + deltap[1], CELL_SIZE)
+	delta = deltaDir([7 * CELL_SIZE, 0], dir)
+	cx.lineTo(x + delta[0], y + delta[1])
+	delta = deltaDir([8 * CELL_SIZE, 0], dir)
+	deltap = deltaDir([8 * CELL_SIZE, 1 * CELL_SIZE], dir)
+	cx.arcTo(x + delta[0], y + delta[1], x + deltap[0], y + deltap[1], CELL_SIZE)
+	delta = deltaDir([8 * CELL_SIZE, CELL_SIZE + HALF_CELL], dir)
+	cx.lineTo(x + delta[0], y + delta[1])
+	delta = deltaDir([6 * CELL_SIZE + HALF_CELL, 2 * CELL_SIZE], dir)
+	deltap = deltaDir([8 * CELL_SIZE, 2 * CELL_SIZE + HALF_CELL], dir)
+	cx.arcTo(x + delta[0], y + delta[1], x + deltap[0], y + deltap[1], HALF_CELL)
+	delta = deltaDir([8 * CELL_SIZE, 4 * CELL_SIZE], dir)
+	cx.lineTo(x + delta[0], y + delta[1])
+	deltap = deltaDir([5 * CELL_SIZE, 4 * CELL_SIZE + HALF_CELL], dir) //  for the inner quarter circle
+	delta = deltaDir([6 * CELL_SIZE, 4 * CELL_SIZE], dir)// outer point
+	cx.arcTo(x + delta[0], y + delta[1], x + deltap[0], y + deltap[1], 4 * CELL_SIZE)
+	delta = deltaDir([2 * CELL_SIZE, 1 * CELL_SIZE], dir)
+	cx.lineTo(x + delta[0], y + delta[1])
+	delta = deltaDir([1 * CELL_SIZE, 2 * CELL_SIZE], dir)
+	cx.lineTo(x + delta[0], y + delta[1])
+	delta = deltaDir([4 * CELL_SIZE + HALF_CELL, 5 * CELL_SIZE], dir)
+	deltap = deltaDir([4 * CELL_SIZE, 6 * CELL_SIZE], dir)
+	cx.lineTo(x + delta[0], y + delta[1])
+	d = deltaDir([4 * CELL_SIZE, 8 * CELL_SIZE], dir)
+	//cx.moveTo(x + d[0], y + d[1])
+	//cx.arcTo(x + deltap[0], y + deltap[1], x + delta[0], y + delta[1], 4 * CELL_SIZE)
+	//trying form the other side
+	d = deltaDir([0, 1 * CELL_SIZE], dir)
+	delta = deltaDir([0, 7 * CELL_SIZE], dir)
+	cx.moveTo(x + d[0], y + d[1])
+	cx.lineTo(x + delta[0], y + delta[1])
+	delta = delta
+	cx.stroke()
+	cx.fillStyle = orig
+
+	
+    }
+    obj.isMoving = false
+    obj.row = row
+    obj.col = col
+    obj.contains = function(r,c) {
+
+    }
+    obj.getFrontier = function(dir) {
+	
+    }
+    return obj
+}
+
+function linkCodeToData(code) {
+    return code.split(".")
+}
+
+function codeIsLink(code) {
+    return code.split(".").length > 1
+}
+
+function codeToKey(code) {
+    let data = linkCodeToData(code)
+    return data[0] + "." + data[1]
+}
+
+// allows for vanilla mapping, as well as linking blank cells to
+// "r.c.isObstacle" is the format for cells to be linked
 function mapFromTemplate(template, cellMap) {
+    // console.log(template)
+    var linkMap = new Map()
+    var cellsToLink = []
     let rows = template.length
     let cols = template[0].length
     let map = new Array2d(rows, cols)
     for (row = 0; row < rows; row ++) {
 	for (col = 0; col < cols; col ++) {
 	    let code = template[row][col]
-	    map.add(row, col, cellMap.get(code)()) //this is calling a function :)
+	    if (codeIsLink(code)) {
+		cellsToLink.push({
+		    row: row,
+		    col: col,
+		    code: code,
+		})
+	    }
+	    else {
+		let cell = cellMap.get(code)()
+	//	console.log(cell)
+		if (cell.isLink) {
+		    console.log("is a link")
+		    console.log(`r.c=${row},${col}`)
+		    console.log(cell)
+		    let str = row + "." + col
+		    linkMap.set(str, {
+			hasBeenDrawn: false,
+			drawImg: cell.drawImg
+		    })
+		}
+		map.add(row, col, cellMap.get(code)()) //this is calling a function :)
+	    }
 	}
     }
+    cellsToLink.forEach(function(cellObj) {
+	let data = linkCodeToData(cellObj.code)
+	let transform = function(x, y) {
+	    let emptyRow = cellObj.row
+	    let emptyCol = cellObj.col
+	    let drawRow = parseInt(data[0])
+	    let drawCol = parseInt(data[1])
+	    let newX = (drawCol - emptyCol) * CELL_SIZE + x
+	    let newY = (drawRow - emptyRow) * CELL_SIZE + y
+	    return [newX, newY]
+	}
+	let link = linkMap.get(codeToKey(cellObj.code))
+	console.log(`code=${cellObj.code}`)
+	console.log(link)
+	let cell = linkedCell(link, transform, data[2] === "true")
+	map.add(cellObj.row, cellObj.col, cell) 
+    })
+
+    
     return map
 }
 
@@ -398,6 +899,50 @@ greekCellMap.set("3", medCol)
 greekCellMap.set("4", smallCol)
 greekCellMap.set("5", greekWallCell)
 greekCellMap.set("6", greekFloorCell)
+
+const overworldCellMap = new Map()
+overworldCellMap.set("0", worldEdgeCell)
+overworldCellMap.set("1", overworldTopWall)
+overworldCellMap.set("2", greekDoor)
+overworldCellMap.set("3", blankNonObstacle)
+overworldCellMap.set("4", romeDoor)
+overworldCellMap.set("5", franceDoor)
+overworldCellMap.set("6", egyptDoor)
+overworldCellMap.set("7", finalDoor)
+overworldCellMap.set("8", secretDoor)
+overworldCellMap.set("9", overworldRightWall)
+overworldCellMap.set("10", overworldLeftWall)
+overworldCellMap.set("11", overworldFloor)
+overworldCellMap.set("12", overworldBotWall)
+overworldCellMap.set("13", torch)
+overworldCellMap.set("14", specialTorch)
+overworldCellMap.set("15", blankObstacle)
+
+const romeCellMap = new Map()
+romeCellMap.set("0", worldEdgeCell)
+romeCellMap.set("1", romeWall)
+romeCellMap.set("2", romeFloor)
+romeCellMap.set("3", romeFloorImgTL)
+romeCellMap.set("4", romeFloorImgTR)
+romeCellMap.set("5", romeFloorImgBR)
+romeCellMap.set("6", romeFloorImgBL)
+romeCellMap.set("7", romeAlcoveTop)
+romeCellMap.set("8", romeAlcoveRight)
+romeCellMap.set("9", romeAlcoveLeft)
+romeCellMap.set("10", romeCornerTL)
+romeCellMap.set("11", romeCornerTR)
+romeCellMap.set("12", romeCornerBR)
+romeCellMap.set("13", romeCornerBL)
+romeCellMap.set("14", romeSquare)
+romeCellMap.set("15", romeMiddleRectLeft)
+romeCellMap.set("16", romeMiddleRectRight)
+romeCellMap.set("17", romeVestLeft)
+romeCellMap.set("18", romeVestRight)
+romeCellMap.set("19", romeWeirdVest)
+romeCellMap.set("20", portalCell)
+
+
+		     
 
 //###############################
 // HELPER FUNCTIONS
@@ -442,6 +987,13 @@ function gridToGlobal(row, col, delta, dir) {
     return [x,y]
 }
 
+function drawGenRect(x, y, w, h, color) {
+    orig = cx.fillStyle
+    cx.fillStyle = color
+    cx.fillRect(x, y, w, h)
+    cx.fillStyle = orig  
+}
+
 function drawRect(x, y, color) {
     orig = cx.fillStyle
     cx.fillStyle = color
@@ -449,7 +1001,7 @@ function drawRect(x, y, color) {
     cx.fillStyle = orig
 }
 
-function drawCircl(x, y, r, color) {
+function drawCircle(x, y, r, color) {
     let orig = cx.fillStyle
     cx.fillStyle = color
     cx.beginPath()
@@ -578,20 +1130,37 @@ function singleCellPortal(row, col, world, spawn) {
 
 // ignores possibility of pushingn an object that touches a movable obj, cuz i don't plan on this happening
 function canFrameShift(map, row, col, dir) {
-    if (row < 0 || col < 0 || row >= map.rows || col >= map.cols) return false
+   // console.log(`r,c=${row},${col} dir=${dir}`)
+    if (row < 0 || col < 0 || row >= map.rows || col >= map.cols) {
+//	console.log("can't shift: off the world")
+	return false
+    }
     if (!map.hasObstacleAt(row, col)) {
+//	console.log("the map has no obstacle at row, col")
 	if (map.hasObjectTouching(row, col)) {
+	  //  console.log("there's an obj touching row, col")
 	    var obj = map.getObjectTouching(row, col)
-	    if (obj.isMoving === false) return false
+	    if (obj.isMoving === false) {
+	//	console.log("the obj is not moving")
+		return false
+	    }
+	   // console.log("the object is moving")
 	    var frontier = obj.getFrontier(dir)
 	    var v = true
-	    frontier.forEach(function(r, c) {
+	   // console.log(`frontier = ${frontier} type=${typeof frontier}`)
+	    frontier.forEach(function(coord) {
+		let r = coord[0]
+		let c = coord[1]
+	//	console.log(`frontier r,c=${r},${c}`)
 		if (map.hasObstacleAt(r, c) || map.hasObjectTouching(r, c)) v = false
 	    })
+	   // console.log(`is obstacle or object on frontier? = ${v}`)
 	    return v
 	}
+//	console.log("there is no obj touching")
 	return true //no obstacle, no obj
     }
+ //   console.log("there is obstacle at row col")
     
     return false //is obstacle
 }
@@ -643,9 +1212,10 @@ function frameShift(map, mapOrigin, dir, movingObjects, world) {
 	    keyData.logic = prevLogic
 	    world.map.triggers.forEach(function(trigger) {
 		if (trigger.isTriggered()) {
-		    trigger.overlay.registerLogic(world.eventLogic)
+		    trigger.onTrigger(world.eventLogic, world.overlayCallback)
+		    /*trigger.overlay.registerLogic(world.eventLogic)
 		    trigger.overlay.registerCallback(world.overlayCallback)
-		    trigger.overlay.step()
+		    trigger.overlay.step()*/
 		}
 	    })
 	    //order of this logic is important. if portal, nothing else should happen
@@ -685,7 +1255,7 @@ var mapPrototype = {
     map: null,
     draw: function(mapOrigin, delta, dir, litCells) {
 	for (row = 0; row < this.rows; row++) {
-	    for (col = 0; col < this.cols; col++) {
+	    for (col = 0; col < this.cols; col++) {	
 		this.map.get(row, col).draw(mapOrigin, row, col, delta, dir, 0)
 	    }
 	}
@@ -726,20 +1296,12 @@ var worldPrototype = {
     light: null,
     player: player,
     centerOrigin: function(spawn) {
-	console.log(spawn)
-	var playerRow = 0
-	var playerCol = 0
-//	console.log("center")
-	if (spawn === SECRET_SPAWN) {
-	   // console.log("in secrete")
-	    playerRow = this.map.secretRow
-	    playerCol = this.map.secretCol
-	}
-	else {
-	   // console.log("else")
-	    playerRow = this.map.playerStartRow
-	    playerCol = this.map.playerStartCol
-	}
+	console.log("spawn " + spawn)
+	console.log(this)
+	console.log(this.map)
+	console.log(this.map.spawns)
+	let playerRow = this.map.spawns[spawn][0]
+	let playerCol = this.map.spawns[spawn][1]
 	this.row = playerRow - CENTER_ROW
 	this.col = playerCol - CENTER_COL
 	player.row = playerRow
@@ -754,6 +1316,7 @@ var worldPrototype = {
 	clearScreen()
 //	console.log("orig [" + this.row + ", " + this.col + "]")
 	this.map.draw([this.row, this.col], 0, [0,0], [])
+	clearNonScreen()
     },
     isInPortal: function(row, col) {
 	var v = false
@@ -818,40 +1381,98 @@ var worldPrototype = {
 //###########################################################
 // ACTUAL WORLDS AND MAPS
 //##########################################################
+function isAnyObjOnCoord(objs, coord) {
+    let retV = false
+    let row = coord[0]
+    let col = coord[1]
+  //  console.log("isany being called: coords=" + coord)
+    objs.forEach(function(obj) {
+//	console.log(`object r,c=${obj.row},${obj.col}`)
+	if (obj.row === row && obj.col === col) retV = true
+    })
+    return retV
+}
+
+function basilicaMap() {
+    let map = Object.create(mapPrototype)
+    map.rows = 67
+    map.cols = 67
+    map.spawns = [[62,33]]
+    map.objList = []
+    map.portals = []
+    map.triggers = []
+    map.map = mapFromTemplate(mapData.get("rome").template, romeCellMap)
+    map.portals.push(singleCellPortal(63, 33, overworld, ROME_SPAWN))
+    return map
+}
+
+function rome(spawn) {
+    let rome = Object.create(worldPrototype, {
+	map: {value: basilicaMap()}
+    })
+    rome.centerOrigin(spawn)
+    rome.map.objList.push(player)
+    
+    rome.eventLogic = function(worldEvent) {
+	rome.eLogic(worldEvent)
+    }
+    rome.overlayCallback = function() {
+	rome.draw()
+    }
+
+    return rome
+}
 
 
 function parthenonMap() {
     let map = Object.create(mapPrototype)
     map.rows = 53
-    map.cols = 26
-    map.playerStartRow = 1
-    map.playerStartCol = 1
+    map.cols = 27
+    map.spawns = [[1,13]]
     map.objList = []
     map.portals = []
     map.triggers = []
    // map.portals.push(singleCellPortal(0,0,overWorld, SECRET_SPAWN))
    // console.log(map.portals)
     map.map = mapFromTemplate(mapData.get("greece").template, greekCellMap)
+    if (questProgress.greece === UNSOLVED) {
+	map.objList.push(smallColObj(8, 8))
+	map.objList.push(smallColObj(8, 18))
+    }
+    else {
+	map.objList.push(smallColObj(31, 11))
+	map.objList.push(smallColObj(31, 15))
+    }
     
-   /* map.objList.push(rock(0,1))
-    map.map.get(2,2).overlay = textOverlay(TEST_STRING)
-    
-    var trigger = {
+ 
+    var victoryTrigger = {
+	winCoords: [[31,11],[31,15]],
 	isTriggered: function() {
-	    var rock = map.objList[0]
-	    if (rock.row === 4 && rock.col === 4 && rock.isMoving) {
-		return true
+	    console.log("is trigger being called")
+	    var c1 = map.objList[0]
+	    var c2 = map.objList[1] //tkw
+	    if (isAnyObjOnCoord([c1,c2], this.winCoords[0]) &&
+		isAnyObjOnCoord([c1,c2], this.winCoords[1])){ //on must have been just put there
+		if (c1.isMoving || c2.isMoving)	return true
 	    }
 	    return false
 	},
-	overlay: textOverlay(TO_STRING)
+	onTrigger: function(logic, callback) {
+	    questProgress.greece = SOLVED
+	    this.overlay.registerLogic(logic)
+	    this.overlay.registerCallback(callback)
+	    this.overlay.step()
+	    
+	},
+	overlay: textOverlay(GREEK_VICTORY_TEXT)
     }
-    map.triggers.push(trigger)*/
+    map.triggers.push(victoryTrigger)
+    map.portals.push(singleCellPortal(0,12, overworld, GREECE_SPAWN))
 
     return map
 }
 
-function ancientGreece(spawn) {
+function greece(spawn) {
     let greece = Object.create(worldPrototype, {
 	map: {value: parthenonMap()}
     })
@@ -869,46 +1490,43 @@ function ancientGreece(spawn) {
     
 }
 
-function overWorldMap() {
+function overworldMap() {
     let map = Object.create(mapPrototype)
-    map.rows = 10
-    map.cols = 10
-    map.playerStartRow = 1
-    map.playerStartCol = 0
-    map.secretRow = 3
-    map.secretCol = 3
+    map.rows = 17
+    map.cols = 26 * 4
+    map.spawns = [[10,3],
+		  [7,13],
+		  [7,26],
+		  [7,39],
+		  [7,52]
+		  ]
     map.objList = []
     map.triggers = []
-    map.portals = [singleCellPortal(0,0, ancientGreece, MAIN_PORTAL_SPAWN)]
-    map.map = new Array2d(map.rows, map.cols)
-    for (row = 0; row < map.map.rows; row++) {
-	for (col = 0; col < map.map.cols; col++) {
-	    var newCell = emptyCell(null)
-	    map.map.add(row, col, newCell)
-	}
-    }
-    map.map.get(4,5).overlay = textOverlay(TEST_STRING)
+    map.portals = []
+    map.map = mapFromTemplate(mapData.get("overworld").template, overworldCellMap)
+    map.portals.push(singleCellPortal(6,12,greece, MAIN_SPAWN))
+    map.portals.push(singleCellPortal(6, 26, rome, MAIN_SPAWN))
+    map.objList.push(basilicaCorner(7,2,[1,1]))
+    //map.map.get(4,5).overlay = textOverlay(TEST_STRING)
   //  console.log(map.map)
     return map
 }
 	    
  
 
-function overWorld(spawn) {
-    console.log("spawn " + spawn)
-    let overWorld = Object.create(worldPrototype, {
-	map: {value: overWorldMap()}	
+function overworld(spawn) {
+    let overworld = Object.create(worldPrototype, {
+	map: {value: overworldMap()}	
     })
-    overWorld.centerOrigin(spawn)
-    overWorld.map.objList.push(player)
-    overWorld.map.objList.push(rock(4,5))
-    overWorld.overlayCallback = function() {
-	overWorld.draw()
+    overworld.centerOrigin(spawn)
+    overworld.map.objList.push(player)
+    overworld.overlayCallback = function() {
+	overworld.draw()
     }
-    overWorld.eventLogic = function(worldEvent) {
-	overWorld.eLogic(worldEvent)
+    overworld.eventLogic = function(worldEvent) {
+	overworld.eLogic(worldEvent)
     }
-    return overWorld
+    return overworld
 }
 
 var universe = {
@@ -921,7 +1539,7 @@ var universe = {
 
 function createUniverse() {
     registerEventListeners()
-    universe.activeWorld = ancientGreece(MAIN_PORTAL_SPAWN)
+    universe.activeWorld = overworld(MAIN_SPAWN)
     universe.startGame()
 }
 
@@ -930,14 +1548,14 @@ function createUniverse() {
 // LOADING AJAX STUFF AND KICK STARTING THE GAME
 //############################################################################
 var ajaxCompleted = 0
-console.log(Object.keys(mapData))
-var ajaxMax = Object.keys(mapData).length
-console.log(ajaxMax)
+var ajaxMax = 3 //wtf why don't work?
+
 
 for (const name of mapData.keys()) {
     var req = new XMLHttpRequest()
     req.addEventListener("load", function() {
 	let obj = JSON.parse(this.responseText)
+//	console.log(obj)
 	mapData.get(name).template = obj
 	ajaxCompleted ++
 	if (ajaxCompleted >= ajaxMax) {
