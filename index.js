@@ -1,6 +1,6 @@
 var canvas = document.getElementById("canvas")
 if (typeof (canvas.getContext) !== undefined) {
-    cx = canvas.getContext("2d")
+    ctx = canvas.getContext("2d")
 }
 
 canvas.height = Math.floor(window.innerHeight / 4 * 3)
@@ -34,11 +34,16 @@ const GREEK_WALL_COLOR = SILVER
 const GREEK_COL_COLOR = SIENNA
 const PORTAL_COLOR = HOT_PINK
 
+const CORNER_OBJ_COLOR = SIENNA
+
+
 
 
 const TEST_STRING = "hello, my name is joe, I want to tell you all about what I have been up to lately. I have to make way more filler text than I expected which is why none of this means anything unless you subscribe to iceberg theory where even if I'm not trying to inject any meaning, tunconscious event in my mind influence my writing in a such a way as to make my opinion about my work irrelevant"
 const TO_STRING = "You can't tell what's different, but the world is not the same as it just was...."
 const GREEK_VICTORY_TEXT = "You feel a rumbling deep in the earth. Something has important has happened somewhere, and you feel that your task here is complete."
+const ROMAN_VICTORY_TEXT = GREEK_VICTORY_TEXT
+const ROMAN_PROGRESS_TEXT = "oH,that hit the spot"
 
 
 
@@ -99,6 +104,10 @@ mapData.set("overworld", {
 })
 mapData.set("rome", {
     path: "map_jsons/rome.json",
+    template: null
+})
+mapData.set("france", {
+    path: "map_jsons/france.json",
     template: null
 })
 
@@ -231,6 +240,24 @@ var drawable = {
     },
     getSingleCellFrontier: function(dir) {
 	return [[incRow(this.row, dir), incCol(this.col, dir)]]
+    }
+}
+
+var bigDrawable = {
+    draw: function(mapOrigin, row, col, delta, dir, alpha) {
+	let relRow = row - mapOrigin[0]
+	let relCol = col - mapOrigin[1]
+	let cells = this.getCells(relRow, relCol)
+	let d = false
+	cells.forEach(function(cell) {
+	    if (isInView(cell[0], cell[1], dir)) d = true
+	})
+	if (d) {
+	    let coord = gridToGlobal(relRow, relCol, delta, dir)
+	   // console.log(`coord = ${coord} relr,c=[${relRow},${relCol}]`)
+	    this.drawImg(coord[0], coord[1], alpha)
+	   // drawGridRect(coord[0], coord[1], relRow, relCol, "rgb(0,255,255)")//default
+	}
     }
 }
 
@@ -683,6 +710,193 @@ function romeWeirdVest() {
 }
 
 
+//////////////////////////////////////////
+// FRANCE BULLSHIT
+/////////////////////////////////////////
+
+function franceFloor() {
+    return romeFloor()
+}
+
+function franceBigPillar() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, BLUE)
+    }
+    cell.isObstacle = true
+    cell.isLink = false
+    return cell
+}
+
+function franceMedPillar() {
+    return franceBigPillar()
+}
+
+function franceSmallPillar() {
+    return franceBigPillar()
+}
+
+function nave(dir) {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, SIENNA)
+    }
+    cell.isObstacle = true
+    cell.isLink = true
+    return cell
+}
+
+function franceNaveL() {
+    return nave([])
+}
+
+function franceNaveR() {
+    return nave([])
+}
+
+function franceWall() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, SIENNA)
+    }
+    cell.isObstacle = true
+    cell.isLink = false
+    return cell
+}
+
+function franceNarthTL() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, SIENNA)
+    }
+    cell.isObstacle = true
+    cell.isLink = true
+    return cell
+}
+
+function franceNarthTR() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, SIENNA)
+    }
+    cell.isObstacle = true
+    cell.isLink = true
+    return cell
+}
+
+function franceNarthBL() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, SIENNA)
+    }
+    cell.isObstacle = true
+    cell.isLink = true
+    return cell
+}
+
+function franceNarthBR() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, SIENNA)
+    }
+    cell.isObstacle = true
+    cell.isLink = true
+    return cell
+}
+
+function franceEntryPillar() {
+    return franceBigPillar()
+}
+
+function franceCorner(dir) {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, SIENNA)
+    }
+    cell.isObstacle = true
+    cell.isLink = true
+    return cell
+}
+
+function franceCornerBR() {
+    return franceCorner([])
+}
+
+function franceCornerBL() {
+    return franceCorner([])
+}
+
+function franceNaveDown() {
+    return nave([])
+}
+
+function franceNaveUp() {
+    return nave([])
+}
+
+function stairs(dir) {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, SIENNA)
+    }
+    cell.isObstacle = true
+    cell.isLink = true
+    return cell
+}
+
+function franceStairsTR() {
+    return stairs([])
+}
+
+function franceStairsTL() {
+    return stairs([])
+}
+
+function franceStairsBL() {
+    return stairs([])
+}
+
+function franceStairsBR() {
+    return stairs([])
+}
+
+function franceCornerTR() {
+    return franceCorner([])
+}
+
+function franceCornerTL() {
+    return franceCorner([])
+}
+
+function fBit(dir) {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, SIENNA)
+    }
+    cell.isObstacle = true
+    cell.isLink = true
+    return cell
+}
+
+function fBitL() {
+    return fBit([])
+}
+
+function fBitR() {
+    return fBit([])
+}
+
+function franceArch() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, SIENNA)
+    }
+    cell.isObstacle = true
+    cell.isLink = true
+    return cell
+}
+
+
 
 
 ////////////////////////
@@ -710,6 +924,22 @@ function deltaDir(delta, dir) {
     return [x, y]
 }
 
+function gridDeltaDir(delta, dir) {
+    let index = Math.floor(Math.abs(dir[0] + dir[1]) / 2)
+    let r = delta[1 - index] * dir[1]
+    let c = delta[index] * dir[0]
+    return [r,c]
+}
+
+function dumbMoveDir(delta, dir) {
+    let index = Math.floor(Math.abs(dir[0] + dir[1]) / 2)
+    let x = delta[1 - index] * dir[1]
+    let y = delta[index] * dir[0]
+    return [x, y]
+}
+
+
+
 function dist(p0,p1) {
     let sum = 0
     for (i = 0; i < p0.length; i ++) {
@@ -718,104 +948,233 @@ function dist(p0,p1) {
     return Math.sqrt(sum)
 }
 
+//https://stackoverflow.com/questions/12219802/a-javascript-function-that-returns-the-x-y-points-of-intersection-between-two-ci
+// ^thanks dude
+function intersection(x0, y0, r0, x1, y1, r1) {
+        var a, dx, dy, d, h, rx, ry;
+        var x2, y2;
+
+        /* dx and dy are the vertical and horizontal distances between
+         * the circle centers.
+         */
+        dx = x1 - x0;
+        dy = y1 - y0;
+
+        /* Determine the straight-line distance between the centers. */
+        d = Math.sqrt((dy*dy) + (dx*dx));
+
+        /* Check for solvability. */
+        if (d > (r0 + r1)) {
+            /* no solution. circles do not intersect. */
+            return false;
+        }
+        if (d < Math.abs(r0 - r1)) {
+            /* no solution. one circle is contained in the other */
+            return false;
+        }
+
+        /* 'point 2' is the point where the line through the circle
+         * intersection points crosses the line between the circle
+         * centers.  
+         */
+
+        /* Determine the distance from point 0 to point 2. */
+        a = ((r0*r0) - (r1*r1) + (d*d)) / (2.0 * d) ;
+
+        /* Determine the coordinates of point 2. */
+        x2 = x0 + (dx * a/d);
+        y2 = y0 + (dy * a/d);
+
+        /* Determine the distance from point 2 to either of the
+         * intersection points.
+         */
+        h = Math.sqrt((r0*r0) - (a*a));
+
+        /* Now determine the offsets of the intersection points from
+         * point 2.
+         */
+        rx = -dy * (h/d);
+        ry = dx * (h/d);
+
+        /* Determine the absolute intersection points. */
+        var xi = x2 + rx;
+        var xi_prime = x2 - rx;
+        var yi = y2 + ry;
+        var yi_prime = y2 - ry;
+
+        return [xi, xi_prime, yi, yi_prime];
+    }
+
 var turtle = {
     x: 0,
     y: 0,
     beginPath: function() {
-	cx.beginPath()
-    }
+	ctx.beginPath()
+    },
     moveTo: function(delta) {
 	this.x += delta[0]
 	this.y += delta[1]
-	cx.moveTo(this.x, this.y)
+	ctx.moveTo(this.x, this.y)
 	
     },
     lineTo: function(delta) {
 	this.x += delta[0]
 	this.y += delta[1]
-	cx.lineTo(this.x, this.y)
+	ctx.lineTo(this.x, this.y)
     },
-    arcTo: function(delta, radius) {
-	let d = dist([this.x, this.y], [this.x + delta[0], this.y + delta[1]])
-	let theta = Math.asin(d / 2 / radius) * 2
+    arcTo: function(delta, radius, innerArc) {
+	let xp = this.x + delta[0]
+	let yp = this.y + delta[1]
+	let centers = intersection(this.x, this.y, radius, xp, yp, radius)
+	
+	let cx = (innerArc) ? centers[0] : centers[1]  //guessed at these, let's see if they actually work
+	let cy = (innerArc) ? centers[2] : centers[3]
+	let startAngle = Math.atan2(this.y - cy, this.x - cx)
+	let endAngle  = Math.atan2(yp - cy, xp - cx)
+	ctx.arc(cx, cy, radius, startAngle, endAngle, !innerArc)
+	this.x = xp
+	this.y = yp
     },
     closePath: function() {
-	cx.closePath()
-    }
+	ctx.closePath()
+    },
     stroke: function(color) {
-	let orig = cx.strokeStyle
-	cx.strokeStyle = color
-	cx.stroke()
-	cx.strokeStyle = orig
-    }
+	let orig = ctx.strokeStyle
+	ctx.strokeStyle = color
+	ctx.stroke()
+	ctx.strokeStyle = orig
+    },
     fill: function(color) {
-	let orig = cx.fillStyle
-	cx.fillStyle = color
-	cx.fill()
-	cx.fillStyle = orig
+	let orig = ctx.fillStyle
+	ctx.fillStyle = color
+	ctx.fill()
+	ctx.fillStyle = orig
     }
 }
 
 function basilicaCorner(row, col, dir) {
-    let obj = Object.create(drawable)
+    let obj = Object.create(bigDrawable)
     obj.drawImg = function(x, y, alpha) {
 	x = (dir[0] == 1) ? x : x + CELL_SIZE
 	y = (dir[1] == 1) ? y : y + CELL_SIZE
 
-	let orig = cx.fillStyle
-	cx.strokeStyle = BLUE
-	cx.beginPath()
-	let delta = deltaDir([0, CELL_SIZE],dir)
-	cx.moveTo(x + delta[0], y + delta[1])
-	let deltap = deltaDir([CELL_SIZE, 0], dir) //first corner
-	cx.arcTo(x, y, x + deltap[0], y + deltap[1], CELL_SIZE)
-	delta = deltaDir([7 * CELL_SIZE, 0], dir)
-	cx.lineTo(x + delta[0], y + delta[1])
-	delta = deltaDir([8 * CELL_SIZE, 0], dir)
-	deltap = deltaDir([8 * CELL_SIZE, 1 * CELL_SIZE], dir)
-	cx.arcTo(x + delta[0], y + delta[1], x + deltap[0], y + deltap[1], CELL_SIZE)
-	delta = deltaDir([8 * CELL_SIZE, CELL_SIZE + HALF_CELL], dir)
-	cx.lineTo(x + delta[0], y + delta[1])
-	delta = deltaDir([6 * CELL_SIZE + HALF_CELL, 2 * CELL_SIZE], dir)
-	deltap = deltaDir([8 * CELL_SIZE, 2 * CELL_SIZE + HALF_CELL], dir)
-	cx.arcTo(x + delta[0], y + delta[1], x + deltap[0], y + deltap[1], HALF_CELL)
-	delta = deltaDir([8 * CELL_SIZE, 4 * CELL_SIZE], dir)
-	cx.lineTo(x + delta[0], y + delta[1])
-	deltap = deltaDir([5 * CELL_SIZE, 4 * CELL_SIZE + HALF_CELL], dir) //  for the inner quarter circle
-	delta = deltaDir([6 * CELL_SIZE, 4 * CELL_SIZE], dir)// outer point
-	cx.arcTo(x + delta[0], y + delta[1], x + deltap[0], y + deltap[1], 4 * CELL_SIZE)
-	delta = deltaDir([2 * CELL_SIZE, 1 * CELL_SIZE], dir)
-	cx.lineTo(x + delta[0], y + delta[1])
-	delta = deltaDir([1 * CELL_SIZE, 2 * CELL_SIZE], dir)
-	cx.lineTo(x + delta[0], y + delta[1])
-	delta = deltaDir([4 * CELL_SIZE + HALF_CELL, 5 * CELL_SIZE], dir)
-	deltap = deltaDir([4 * CELL_SIZE, 6 * CELL_SIZE], dir)
-	cx.lineTo(x + delta[0], y + delta[1])
-	d = deltaDir([4 * CELL_SIZE, 8 * CELL_SIZE], dir)
-	//cx.moveTo(x + d[0], y + d[1])
-	//cx.arcTo(x + deltap[0], y + deltap[1], x + delta[0], y + delta[1], 4 * CELL_SIZE)
-	//trying form the other side
-	d = deltaDir([0, 1 * CELL_SIZE], dir)
-	delta = deltaDir([0, 7 * CELL_SIZE], dir)
-	cx.moveTo(x + d[0], y + d[1])
-	cx.lineTo(x + delta[0], y + delta[1])
-	delta = delta
-	cx.stroke()
-	cx.fillStyle = orig
-
-	
+	turtle.x = x
+	turtle.y = y
+	turtle.beginPath()
+	turtle.moveTo(deltaDir([0, CELL_SIZE],dir))
+	turtle.arcTo(deltaDir([CELL_SIZE, -CELL_SIZE], dir), CELL_SIZE, true)
+	turtle.lineTo(deltaDir([6 * CELL_SIZE, 0], dir))
+	turtle.arcTo(deltaDir([1 * CELL_SIZE, 1 * CELL_SIZE], dir), CELL_SIZE, true)
+	turtle.lineTo(deltaDir([0, HALF_CELL], dir))
+	turtle.arcTo(deltaDir([0, CELL_SIZE], dir), HALF_CELL, false)
+	turtle.lineTo(deltaDir([0, CELL_SIZE + HALF_CELL], dir))
+	turtle.lineTo(deltaDir([-2 * CELL_SIZE, 0], dir))
+	let r = 2 * CELL_SIZE
+	let dy = 2 * CELL_SIZE - Math.sqrt((r*r) - CELL_SIZE * CELL_SIZE)
+	turtle.arcTo(deltaDir([-1 * CELL_SIZE, dy], dir), r, false)
+	turtle.lineTo(deltaDir([-2 * CELL_SIZE - HALF_CELL, -2 * CELL_SIZE - dy], dir))
+	turtle.lineTo(deltaDir([-HALF_CELL, HALF_CELL], dir))
+	turtle.lineTo(deltaDir([2 * CELL_SIZE + dy, 2 * CELL_SIZE + HALF_CELL], dir))
+	turtle.arcTo(deltaDir([-dy, CELL_SIZE], dir), 2 * CELL_SIZE, false)
+	turtle.lineTo(deltaDir([0, 2 * CELL_SIZE], dir))
+	turtle.lineTo(deltaDir([-1 * CELL_SIZE - HALF_CELL, 0], dir))
+	turtle.arcTo(deltaDir([-CELL_SIZE, 0], dir), HALF_CELL, false)
+	turtle.lineTo(deltaDir([-HALF_CELL, 0], dir))
+	turtle.arcTo(deltaDir([-CELL_SIZE, -CELL_SIZE], dir), CELL_SIZE, true)
+	turtle.closePath()
+	turtle.fill(CORNER_OBJ_COLOR)	
     }
     obj.isMoving = false
     obj.row = row
     obj.col = col
     obj.contains = function(r,c) {
-
+	let v = false
+	obj.getCells(obj.row, obj.col).forEach(function(cell) {
+	    if (cell[0] == r && cell[1] == c) v = true
+	})
+	return v
     }
-    obj.getFrontier = function(dir) {
-	
+    obj.getFrontier = function(moveDir) {
+	let frontier = []
+	let delta;
+	let md = dumbMoveDir(moveDir,dir)
+	if (md[0] == 1) {
+	    delta = gridDeltaDir([0,8], dir)
+	    frontier.push([obj.row + delta[0], obj.col + delta[1]])
+	    delta = gridDeltaDir([1,8], dir)
+	    frontier.push([obj.row + delta[0], obj.col + delta[1]])
+	    delta = gridDeltaDir([2,8], dir)
+	    frontier.push([obj.row + delta[0], obj.col + delta[1]])
+	    delta = gridDeltaDir([3,8], dir)
+	    frontier.push([obj.row + delta[0], obj.col + delta[1]])
+	    delta = gridDeltaDir([4,6], dir)
+	    frontier.push([obj.row + delta[0], obj.col + delta[1]])
+	    delta = gridDeltaDir([5,5], dir)
+	    frontier.push([obj.row + delta[0], obj.col + delta[1]])
+	    delta = gridDeltaDir([6,4], dir)
+	    frontier.push([obj.row + delta[0], obj.col + delta[1]])
+	    delta = gridDeltaDir([7,4], dir)
+	    frontier.push([obj.row + delta[0], obj.col + delta[1]])
+	}
+	else if(md[0] == -1) {
+	    for (row = 0; row < 8; row ++) {
+		delta = gridDeltaDir([row, -1], dir)
+		frontier.push([obj.row + delta[0], obj.col + delta[1]])
+	    }
+	}
+	else if (md[1] == 1) {
+	    delta = gridDeltaDir([8,0], dir)
+	    frontier.push([obj.row + delta[0], obj.col + delta[1]])
+	    delta = gridDeltaDir([8,1], dir)
+	    frontier.push([obj.row + delta[0], obj.col + delta[1]])
+	    delta = gridDeltaDir([8,2], dir)
+	    frontier.push([obj.row + delta[0], obj.col + delta[1]])
+	    delta = gridDeltaDir([8,3], dir)
+	    frontier.push([obj.row + delta[0], obj.col + delta[1]])
+	    delta = gridDeltaDir([6,4], dir)
+	    frontier.push([obj.row + delta[0], obj.col + delta[1]])
+	    delta = gridDeltaDir([5,5], dir)
+	    frontier.push([obj.row + delta[0], obj.col + delta[1]])
+	    delta = gridDeltaDir([4,6], dir)
+	    frontier.push([obj.row + delta[0], obj.col + delta[1]])
+	    delta = gridDeltaDir([4,7], dir)
+	    frontier.push([obj.row + delta[0], obj.col + delta[1]])
+	}
+	else if (md[1] == -1) {
+	    for (col = 0; col < 8; col ++) {
+		delta = gridDeltaDir([-1, col], dir)
+		frontier.push([obj.row + delta[0], obj.col + delta[1]])
+	    }
+	}
+	console.log("frontier for basilica c")
+	console.log(frontier)
+	return frontier
+    }
+    obj.getCells = function(r, c) { //rel row and col are passed
+	let cells = []
+	for (row = 0; row < 4; row ++) {
+	    for (col = 0; col < 8; col ++) {
+		let delta = gridDeltaDir([row, col], dir)
+		cells.push([r + delta[0], c + delta[1]])
+	    }
+	}
+	for (row = 4; row < 8; row ++) {
+	    for (col = 0; col < 4; col ++) {
+		let delta = gridDeltaDir([row,col], dir)
+		cells.push([r + delta[0], c + delta[1]])
+	    }
+	}
+	let delta = gridDeltaDir([4,4], dir)
+	cells.push([r + delta[0], c + delta[1]])
+	delta = gridDeltaDir([5,4], dir)
+	cells.push([r + delta[0], c + delta[1]])
+	delta = gridDeltaDir([4,5], dir)
+	cells.push([r + delta[0], c + delta[1]])
+	return cells
     }
     return obj
 }
+//////////////////////////////////////////////////////////////////////
 
 function linkCodeToData(code) {
     return code.split(".")
@@ -834,6 +1193,7 @@ function codeToKey(code) {
 // "r.c.isObstacle" is the format for cells to be linked
 function mapFromTemplate(template, cellMap) {
     // console.log(template)
+  //  console.log(cellMap)
     var linkMap = new Map()
     var cellsToLink = []
     let rows = template.length
@@ -850,12 +1210,13 @@ function mapFromTemplate(template, cellMap) {
 		})
 	    }
 	    else {
+	//	console.log(code)
 		let cell = cellMap.get(code)()
-	//	console.log(cell)
+		console.log(cell)
 		if (cell.isLink) {
-		    console.log("is a link")
-		    console.log(`r.c=${row},${col}`)
-		    console.log(cell)
+		  //  console.log("is a link")
+		    //console.log(`r.c=${row},${col}`)
+		    //console.log(cell)
 		    let str = row + "." + col
 		    linkMap.set(str, {
 			hasBeenDrawn: false,
@@ -941,6 +1302,36 @@ romeCellMap.set("18", romeVestRight)
 romeCellMap.set("19", romeWeirdVest)
 romeCellMap.set("20", portalCell)
 
+const franceCellMap = new Map()
+franceCellMap.set("0", worldEdgeCell)
+franceCellMap.set("1", franceFloor)
+franceCellMap.set("2", franceBigPillar)
+franceCellMap.set("3", franceMedPillar)
+franceCellMap.set("4", franceSmallPillar)
+franceCellMap.set("7", franceNaveL)
+franceCellMap.set("8", franceNaveR)
+franceCellMap.set("9", franceWall)
+franceCellMap.set("10", franceNarthTL)
+franceCellMap.set("11", franceNarthTR)
+franceCellMap.set("12", franceNarthBL)
+franceCellMap.set("13", franceNarthBR)
+franceCellMap.set("14", franceEntryPillar)
+franceCellMap.set("15", portalCell)
+franceCellMap.set("16", franceCornerBR)
+franceCellMap.set("17", franceCornerBL)
+franceCellMap.set("19", franceNaveDown)
+franceCellMap.set("20", franceNaveUp)
+franceCellMap.set("22", franceStairsTR)
+franceCellMap.set("23", franceStairsBR)
+franceCellMap.set("24", franceStairsTL)
+franceCellMap.set("25", franceStairsBL)
+franceCellMap.set("26", fBitL)
+franceCellMap.set("27", fBitR)
+franceCellMap.set("28", franceCornerTL)
+franceCellMap.set("29", franceCornerTR)
+franceCellMap.set("30", franceArch)
+
+
 
 		     
 
@@ -988,39 +1379,39 @@ function gridToGlobal(row, col, delta, dir) {
 }
 
 function drawGenRect(x, y, w, h, color) {
-    orig = cx.fillStyle
-    cx.fillStyle = color
-    cx.fillRect(x, y, w, h)
-    cx.fillStyle = orig  
+    orig = ctx.fillStyle
+    ctx.fillStyle = color
+    ctx.fillRect(x, y, w, h)
+    ctx.fillStyle = orig  
 }
 
 function drawRect(x, y, color) {
-    orig = cx.fillStyle
-    cx.fillStyle = color
-    cx.fillRect(x, y, CELL_SIZE, CELL_SIZE)
-    cx.fillStyle = orig
+    orig = ctx.fillStyle
+    ctx.fillStyle = color
+    ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE)
+    ctx.fillStyle = orig
 }
 
 function drawCircle(x, y, r, color) {
-    let orig = cx.fillStyle
-    cx.fillStyle = color
-    cx.beginPath()
-    cx.arc(x, y, r, 0, Math.PI * 2)
-    cx.fill()
-    cx.fillStyle = orig
+    let orig = ctx.fillStyle
+    ctx.fillStyle = color
+    ctx.beginPath()
+    ctx.arc(x, y, r, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = orig
 }
 
 function drawGridRect(x, y, color) {
-    orig = cx.fillStyle
-    cx.fillStyle = "rgb(0,0,0)"
-    cx.fillRect(x, y, CELL_SIZE, CELL_SIZE)
-    cx.fillStyle = color
+    orig = ctx.fillStyle
+    ctx.fillStyle = "rgb(0,0,0)"
+    ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE)
+    ctx.fillStyle = color
     let gap = Math.floor(CELL_SIZE / 10)
-    cx.fillRect(x + gap, y + gap, CELL_SIZE - 2 * gap, CELL_SIZE - 2 * gap)
-  /*  cx.fillStyle = "rgb(20,20,20)"
-    cx.font = "12px Georgia"
-    cx.fillText("(" + row + "," + col + ")",x + gap * 2, y + 5 * gap) */
-    cx.fillStyle = orig
+    ctx.fillRect(x + gap, y + gap, CELL_SIZE - 2 * gap, CELL_SIZE - 2 * gap)
+  /*  ctx.fillStyle = "rgb(20,20,20)"
+    ctx.font = "12px Georgia"
+    ctx.fillText("(" + row + "," + col + ")",x + gap * 2, y + 5 * gap) */
+    ctx.fillStyle = orig
 }
 
 // code borrowed from https://www.html5canvastutorials.com/tutorials/html5-canvas-wrap-text-tutorial/
@@ -1033,12 +1424,12 @@ function wrapText(text, x, y, maxWidth, lineHeight, maxHeight) {
     var pnt = 0;
     for(var n = 0; n < words.length; n++) {
         var testLine = line + words[n] + ' ';
-        var metrics = cx.measureText(testLine);
+        var metrics = ctx.measureText(testLine);
         var testWidth = metrics.width;
 //	console.log(testWidth)
         if (testWidth > maxWidth && n > 0) {
 	   // console.log(line)
-	    cx.fillText(line, x, y);
+	    ctx.fillText(line, x, y);
 	    pnt += line.length
 	    line = words[n] + ' ';
 	    y += lineHeight;
@@ -1050,7 +1441,7 @@ function wrapText(text, x, y, maxWidth, lineHeight, maxHeight) {
 	    line = testLine;
         }
     }
-    cx.fillText(line, x, y);
+    ctx.fillText(line, x, y);
     return TEXT_FINISHED
 }
 
@@ -1061,41 +1452,41 @@ function wrappedTextbox(text) {
     let maxWidth = SCREEN.width - 2 * txtMargin
     let maxHeight = Math.floor(SCREEN.height / 2) - 2 * txtMargin + y
     let lineHeight = 30
-    let orig = cx.fillStyle
-    cx.fillStyle = TEXT_BACKGROUND_COLOR
-    cx.fillRect(x, y, SCREEN.width, Math.floor(SCREEN.height / 2))
-    cx.fillStyle = TEXT_COLOR
-    cx.font = TEXT_FONT
-    console.log(cx.font)
+    let orig = ctx.fillStyle
+    ctx.fillStyle = TEXT_BACKGROUND_COLOR
+    ctx.fillRect(x, y, SCREEN.width, Math.floor(SCREEN.height / 2))
+    ctx.fillStyle = TEXT_COLOR
+    ctx.font = TEXT_FONT
+    console.log(ctx.font)
     let pnt = wrapText(text, x + txtMargin, y + txtMargin, maxWidth, lineHeight, maxHeight)
-    cx.fillStyle = orig
+    ctx.fillStyle = orig
     console.log(pnt)
     return pnt
     
 }
 
 function clearCanvas() {
-    let orig = cx.fillStyle
-    cx.fillStyle = BACKGROUND_COLOR
-    cx.fillRect(0, 0, canvas.width, canvas.height)
-    cx.fillStyle = orig
+    let orig = ctx.fillStyle
+    ctx.fillStyle = BACKGROUND_COLOR
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.fillStyle = orig
 }
 
 function clearScreen() {
-    let orig = cx.fillStyle
-    cx.fillStyle = "rgb(100,100,100)"
-    cx.fillRect(ORIGIN.x, ORIGIN.y, SCREEN.width, SCREEN.height)
-    cx.fillStyle = orig
+    let orig = ctx.fillStyle
+    ctx.fillStyle = "rgb(100,100,100)"
+    ctx.fillRect(ORIGIN.x, ORIGIN.y, SCREEN.width, SCREEN.height)
+    ctx.fillStyle = orig
 }
 
 function clearNonScreen() {
-    let orig = cx.fillStyle
-    cx.fillStyle = BACKGROUND_COLOR
-    cx.fillRect(0, 0, ORIGIN.x, canvas.height)
-    cx.fillRect(0, 0, canvas.width, ORIGIN.y)
-    cx.fillRect(0, SCREEN.height + Math.floor((canvas.height - SCREEN.height) / 2), canvas.width, ORIGIN.y)
-    cx.fillRect(SCREEN.width + Math.floor((canvas.width - SCREEN.width) / 2), 0, ORIGIN.x, canvas.height)
-    cx.fillStyle = orig
+    let orig = ctx.fillStyle
+    ctx.fillStyle = BACKGROUND_COLOR
+    ctx.fillRect(0, 0, ORIGIN.x, canvas.height)
+    ctx.fillRect(0, 0, canvas.width, ORIGIN.y)
+    ctx.fillRect(0, SCREEN.height + Math.floor((canvas.height - SCREEN.height) / 2), canvas.width, ORIGIN.y)
+    ctx.fillRect(SCREEN.width + Math.floor((canvas.width - SCREEN.width) / 2), 0, ORIGIN.x, canvas.height)
+    ctx.fillStyle = orig
 }
 
 function incRow(row, dir) {
@@ -1130,28 +1521,28 @@ function singleCellPortal(row, col, world, spawn) {
 
 // ignores possibility of pushingn an object that touches a movable obj, cuz i don't plan on this happening
 function canFrameShift(map, row, col, dir) {
-   // console.log(`r,c=${row},${col} dir=${dir}`)
+    console.log(`r,c=${row},${col} dir=${dir}`)
     if (row < 0 || col < 0 || row >= map.rows || col >= map.cols) {
 //	console.log("can't shift: off the world")
 	return false
     }
     if (!map.hasObstacleAt(row, col)) {
-//	console.log("the map has no obstacle at row, col")
+	console.log("the map has no obstacle at row, col")
 	if (map.hasObjectTouching(row, col)) {
-	  //  console.log("there's an obj touching row, col")
+	    console.log("there's an obj touching row, col")
 	    var obj = map.getObjectTouching(row, col)
 	    if (obj.isMoving === false) {
-	//	console.log("the obj is not moving")
+		console.log("the obj is not moving")
 		return false
 	    }
-	   // console.log("the object is moving")
+	    console.log("the object is moving")
 	    var frontier = obj.getFrontier(dir)
 	    var v = true
-	   // console.log(`frontier = ${frontier} type=${typeof frontier}`)
+	    console.log(`frontier = ${frontier} type=${typeof frontier}`)
 	    frontier.forEach(function(coord) {
 		let r = coord[0]
 		let c = coord[1]
-	//	console.log(`frontier r,c=${r},${c}`)
+		console.log(`frontier r,c=${r},${c}`)
 		if (map.hasObstacleAt(r, c) || map.hasObjectTouching(r, c)) v = false
 	    })
 	   // console.log(`is obstacle or object on frontier? = ${v}`)
@@ -1261,6 +1652,7 @@ var mapPrototype = {
 	}
 	this.objList.forEach(function(obj) {
 	    if (delta ===  0 || !obj.isMoving) {
+		console.log("obj not moving- " + obj.row + " " + obj.col)
 		obj.draw(mapOrigin, obj.row, obj.col, delta, dir, 0)
 	    }
 	})
@@ -1296,10 +1688,10 @@ var worldPrototype = {
     light: null,
     player: player,
     centerOrigin: function(spawn) {
-	console.log("spawn " + spawn)
-	console.log(this)
-	console.log(this.map)
-	console.log(this.map.spawns)
+//	console.log("spawn " + spawn)
+//	console.log(this)
+//	console.log(this.map)
+//	console.log(this.map.spawns)
 	let playerRow = this.map.spawns[spawn][0]
 	let playerCol = this.map.spawns[spawn][1]
 	this.row = playerRow - CENTER_ROW
@@ -1393,6 +1785,35 @@ function isAnyObjOnCoord(objs, coord) {
     return retV
 }
 
+function chartesMap() {
+    let map = Object.create(mapPrototype)
+    map.rows = 97
+    map.cols = 52
+    map.spawns = [[95,26]]
+    map.objList = []
+    map.portals = []
+    map.triggers = []
+    map.map = mapFromTemplate(mapData.get("france").template, franceCellMap)
+    return map
+}
+
+function france(spawn) {
+    let france = Object.create(worldPrototype, {
+	map: {value: chartesMap()}
+    })
+    france.centerOrigin(spawn)
+    france.map.objList.push(player)
+    
+    france.eventLogic = function(worldEvent) {
+	france.eLogic(worldEvent)
+    }
+    france.overlayCallback = function() {
+	 france.draw()
+    }
+
+    return france
+}
+
 function basilicaMap() {
     let map = Object.create(mapPrototype)
     map.rows = 67
@@ -1403,6 +1824,39 @@ function basilicaMap() {
     map.triggers = []
     map.map = mapFromTemplate(mapData.get("rome").template, romeCellMap)
     map.portals.push(singleCellPortal(63, 33, overworld, ROME_SPAWN))
+    map.objList.push(basilicaCorner(24,25,[1,1]))
+    map.objList.push(basilicaCorner(40,25,[1,-1]))
+    map.objList.push(basilicaCorner(24,41,[-1,1]))
+    map.objList.push(basilicaCorner(40,41,[-1,-1]))
+
+    var victoryTrigger = {
+	isTriggered: function() {
+	    console.log("is trigger being called")
+	    let v = false
+	    if ((map.objList[0].row == 20 && map.objList[0].col == 21) &&
+		(map.objList[1].row == 44 && map.objList[1].col == 21) &&
+		(map.objList[2].row == 20 && map.objList[2].col == 45) &&
+		(map.objList[3].row == 44 && map.objList[3].col == 45) &&
+		((map.objList[0].isMoving || map.objList[1].isMoving ||
+		  map.objList[2].isMoving || map.objList[3].isMoving))
+	       ) {
+		return true
+	    }
+	    return false
+	},
+	onTrigger: function(logic, callback) {
+	    questProgress.rome = SOLVED
+	    this.overlay.registerLogic(logic)
+	    this.overlay.registerCallback(callback)
+	    this.overlay.step()
+	    
+	},
+	overlay: textOverlay(ROMAN_VICTORY_TEXT)
+    }
+
+    map.triggers.push(victoryTrigger)
+  //  map.triggers.push(progressTrigger)
+    
     return map
 }
 
@@ -1506,7 +1960,6 @@ function overworldMap() {
     map.map = mapFromTemplate(mapData.get("overworld").template, overworldCellMap)
     map.portals.push(singleCellPortal(6,12,greece, MAIN_SPAWN))
     map.portals.push(singleCellPortal(6, 26, rome, MAIN_SPAWN))
-    map.objList.push(basilicaCorner(7,2,[1,1]))
     //map.map.get(4,5).overlay = textOverlay(TEST_STRING)
   //  console.log(map.map)
     return map
@@ -1539,7 +1992,7 @@ var universe = {
 
 function createUniverse() {
     registerEventListeners()
-    universe.activeWorld = overworld(MAIN_SPAWN)
+    universe.activeWorld = france(MAIN_SPAWN)
     universe.startGame()
 }
 
@@ -1548,7 +2001,7 @@ function createUniverse() {
 // LOADING AJAX STUFF AND KICK STARTING THE GAME
 //############################################################################
 var ajaxCompleted = 0
-var ajaxMax = 3 //wtf why don't work?
+var ajaxMax = 4 //wtf why don't work?
 
 
 for (const name of mapData.keys()) {
