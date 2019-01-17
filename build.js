@@ -16,6 +16,14 @@ const paths = [
     {
 	read: "map_csvs/france.csv",
 	write: "map_jsons/france.json"
+    },
+    {
+	read: "map_csvs/egypt.csv",
+	write: "map_jsons/egypt.json"
+    },
+    {
+	read: "map_csvs/end.csv",
+	write: "map_jsons/end.json"
     }
 ]
 

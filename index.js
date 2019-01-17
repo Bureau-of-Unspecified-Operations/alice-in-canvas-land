@@ -22,6 +22,10 @@ const HOT_PINK = "rgb(255,105,180)"
 const LIGHT_GREY = "rgb(220,220,220)"
 const RED = "rgb(255,0,0)"
 const ORANGE = "rgb(255,140,0)"
+const SANDY_YELLOW = "rgb(253,223,119)"
+const SANDY_BROWN = "rgb(244,164,96)"
+
+const END_DARK_ALPHA = 0.5
 
 
 const BACKGROUND_COLOR = BLACK
@@ -36,6 +40,13 @@ const PORTAL_COLOR = HOT_PINK
 
 const CORNER_OBJ_COLOR = SIENNA
 
+const EGYPT_FLOOR_COLOR = SANDY_YELLOW
+const EGYPT_WALL_COLOR = SANDY_BROWN
+const EGYPT_COL_COLOR = SANDY_BROWN
+
+const END_FLOOR_COLOR = LIGHT_GREY
+const END_WALL_COLOR = SIENNA
+
 
 
 
@@ -44,6 +55,7 @@ const TO_STRING = "You can't tell what's different, but the world is not the sam
 const GREEK_VICTORY_TEXT = "You feel a rumbling deep in the earth. Something has important has happened somewhere, and you feel that your task here is complete."
 const ROMAN_VICTORY_TEXT = GREEK_VICTORY_TEXT
 const ROMAN_PROGRESS_TEXT = "oH,that hit the spot"
+const EGYPT_VICTORY_TEXT = "Who are you who can walk through walls that aren't there? Surely no mere door could stop you..."
 
 
 
@@ -71,6 +83,7 @@ const GREECE_SPAWN = 1
 const ROME_SPAWN = 2
 const FRANCE_SPAWN = 3
 const EGYPT_SPAWN = 4
+const END_SPAWN = 5
 
 
 
@@ -110,6 +123,14 @@ mapData.set("france", {
     path: "map_jsons/france.json",
     template: null
 })
+mapData.set("egypt", {
+    path: "map_jsons/egypt.json",
+    template: null
+})
+mapData.set("end", {
+    path: "map_jsons/end.json",
+    template: null
+})
 
 
 const questProgress = {
@@ -117,6 +138,14 @@ const questProgress = {
     france: UNSOLVED,
     egypt: UNSOLVED,
     rome: UNSOLVED
+}
+
+function totalVictory() {
+    return true
+    return (questProgress.greece == SOLVED &&
+	    questProgress.rome == SOLVED &&
+	    questProgress.france == SOLVED &&
+	    questProgress.egypt == SOLVED)
 }
 
 const dirMap = new Map()
@@ -336,6 +365,7 @@ function textOverlay(text) {
 		    writable: true
 		   }
     })
+    overlay.hasTrigger = false
     overlay.eventLogic = function(worldEvent) {
 	if (worldEvent === INSPECT) {
 	    console.log(overlay)
@@ -357,6 +387,9 @@ function textOverlay(text) {
 	    }
 	}
 	else {
+	    if (overlay.hasTrigger) {
+		overlay.activateTrigger()
+	    }
 	    keyData.logic = overlay.prevLogic
 	    overlay.callback()
 	    overlay.textpnt = 0
@@ -365,6 +398,14 @@ function textOverlay(text) {
     }
     return overlay    
 }
+
+function textOverlayVictoryTrigger(text, trigger) {
+    let overlay = textOverlay(text)
+    overlay.hasTrigger = true
+    overlay.activateTrigger = trigger
+    return overlay
+}
+    
 
 
 
@@ -898,6 +939,120 @@ function franceArch() {
 
 
 
+/////////////////////////////////////////
+/////////////////////////////////////////
+
+function egyptFloor() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, EGYPT_FLOOR_COLOR)
+    }
+    cell.isObstacle = false
+    return cell
+}
+
+function egyptWall() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, EGYPT_WALL_COLOR)
+    }
+    cell.isObstacle = true
+    return cell
+}
+
+function egyptCol(size) {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, EGYPT_FLOOR_COLOR)
+	drawCircle(x + HALF_CELL, y + HALF_CELL, size, EGYPT_COL_COLOR)
+    }
+    cell.isObstacle = true
+    return cell
+}
+
+function egyptBigCol() {
+    return egyptCol(HALF_CELL)
+}
+
+function egyptSmallCol() {
+    return egyptCol(Math.floor(HALF_CELL * 3/4))
+}
+
+function egyptPharoh() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, ORANGE)
+    }
+    cell.isObstacle = true
+    return cell
+}
+
+function egyptFakeWall() {
+    let cell = egyptWall()
+    cell.isObstacle = false
+    return cell
+}
+
+//////////////////////////////
+/////////////////////////////
+
+
+function endFloor(alphaP) {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, END_FLOOR_COLOR)
+	darkenRect(x, y, alphaP)
+    }
+    cell.isObstacle = false
+    return cell
+}
+
+function endWall(alphaP) {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, END_WALL_COLOR)
+	darkenRect(x, y, alphaP)
+    }
+    cell.isObstacle = true
+    return cell
+}
+
+function endDarkFloor() {
+    return endFloor(END_DARK_ALPHA)
+}
+
+function endLightFloor() {
+    return endFloor(0.0)
+}
+
+function endDarkWall() {
+    return endWall(END_DARK_ALPHA)
+}
+
+function endLightWall() {
+    return endWall(0.0)
+}
+
+function endTorch() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, ORANGE)
+    }
+    cell.isObstacle = true
+    cell.isLink = true
+    return cell
+}
+
+function endSage() {
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, ORANGE)
+    }
+    cell.isObstacle = true
+    cell.isLink = true
+    return cell
+}
+
 
 ////////////////////////
 // OBJECTS
@@ -1212,7 +1367,7 @@ function mapFromTemplate(template, cellMap) {
 	    else {
 	//	console.log(code)
 		let cell = cellMap.get(code)()
-		console.log(cell)
+	//	console.log(cell)
 		if (cell.isLink) {
 		  //  console.log("is a link")
 		    //console.log(`r.c=${row},${col}`)
@@ -1239,8 +1394,8 @@ function mapFromTemplate(template, cellMap) {
 	    return [newX, newY]
 	}
 	let link = linkMap.get(codeToKey(cellObj.code))
-	console.log(`code=${cellObj.code}`)
-	console.log(link)
+//	console.log(`code=${cellObj.code}`)
+//	console.log(link)
 	let cell = linkedCell(link, transform, data[2] === "true")
 	map.add(cellObj.row, cellObj.col, cell) 
     })
@@ -1331,6 +1486,26 @@ franceCellMap.set("28", franceCornerTL)
 franceCellMap.set("29", franceCornerTR)
 franceCellMap.set("30", franceArch)
 
+const egyptCellMap = new Map()
+egyptCellMap.set("0", worldEdgeCell)
+egyptCellMap.set("1", egyptFloor)
+egyptCellMap.set("2", egyptWall)
+egyptCellMap.set("3", egyptBigCol)
+egyptCellMap.set("4", egyptSmallCol)
+egyptCellMap.set("5", egyptPharoh)
+egyptCellMap.set("6", portalCell)
+egyptCellMap.set("7", egyptFakeWall)
+
+const endCellMap = new Map()
+endCellMap.set("0", worldEdgeCell)
+endCellMap.set("1", endDarkFloor)
+endCellMap.set("2", endDarkWall)
+endCellMap.set("3", endTorch)
+endCellMap.set("4", endSage)
+endCellMap.set("5", portalCell)
+endCellMap.set("7", endLightFloor)
+endCellMap.set("6", endLightWall)
+
 
 
 		     
@@ -1376,6 +1551,15 @@ function gridToGlobal(row, col, delta, dir) {
     var y = ORIGIN.y - Math.floor(delta * dir[1] * CELL_SIZE) + row * CELL_SIZE
    // console.log(`x,y=${x},${y}`)
     return [x,y]
+}
+
+function darkenRect(x, y, alpha) {
+    let orig = ctx.fillStyle
+    let st = "rgba(0,0,0," + alpha.toString() + ")"
+    ctx.fillStyle = st
+   // console.log(`slpha=${alpha}, style=${ctx.fillStyle}, st=${st}`)
+    ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE)
+    ctx.fillStyle = orig
 }
 
 function drawGenRect(x, y, w, h, color) {
@@ -1507,9 +1691,42 @@ function drawIncCol(col, dir) {
 
 
 function singleCellPortal(row, col, world, spawn) {
-    var portal = {
+    let portal = {
 	contains: function(r, c) {
 	    return (row === r && col === c)
+	},
+	world: world,
+	spawn: spawn
+    }
+    return portal
+}
+
+function rowPortal(row, world, spawn) {
+    let portal = {
+	contains: function(r, c) {
+	    return row == r
+	},
+	world: world,
+	spawn: spawn
+    }
+    return portal
+}
+
+function  doorPortal(row, col, world, spawn) {
+    let portal = {
+	contains: function(r, c) {
+	    return ((row == r) && ((col == c) || (col - 1 == c) || col + 1 == c))
+	},
+	world: world,
+	spawn: spawn
+    }
+    return portal
+}
+
+function rowRangePortal(row, fstCol, scnCol, world, spawn) {
+    let portal = {
+	contains: function(r, c) {
+	    return (row == r) && (c >= fstCol) && (c <= scnCol)
 	},
 	world: world,
 	spawn: spawn
@@ -1746,7 +1963,7 @@ var worldPrototype = {
 		//console.log(this)
 		//console.log(this.map)
 		let cell = realthis.map.map.get(row, col)
-		if (cell.overlay !== null) {
+		if (cell.overlay !== undefined) {
 		    let overlay =  cell.overlay
 		    overlay.registerLogic(realthis.eventLogic)
 		    overlay.registerCallback(realthis.overlayCallback)
@@ -1785,6 +2002,69 @@ function isAnyObjOnCoord(objs, coord) {
     return retV
 }
 
+function endMap() {
+    let map = Object.create(mapPrototype)
+    map.rows = 15
+    map.cols = 20
+    map.spawns = [[11,10]]
+    map.objList = []
+    map.portals = []
+    map.triggers = []
+    map.map = mapFromTemplate(mapData.get("end").template, endCellMap)
+    map.portals.push(rowRangePortal(12,8,11, overworld, END_SPAWN))
+    return map
+}
+
+function end(spawn) {
+    let end = Object.create(worldPrototype, {
+	map: {value: endMap()}
+    })
+    end.centerOrigin(spawn)
+    end.map.objList.push(player)
+    
+    end.eventLogic = function(worldEvent) {
+	end.eLogic(worldEvent)
+    }
+    end.overlayCallback = function() {
+	 end.draw()
+    }
+
+    return end
+}
+
+function edfuMap() {
+    let map = Object.create(mapPrototype)
+    map.rows = 109
+    map.cols = 65
+    map.spawns = [[107,32]]
+    map.objList = []
+    map.portals = []
+    map.triggers = []
+    map.map = mapFromTemplate(mapData.get("egypt").template, egyptCellMap)
+    map.portals.push(rowPortal(108, overworld, EGYPT_SPAWN))
+    map.map.get(7,32).overlay = textOverlayVictoryTrigger(EGYPT_VICTORY_TEXT,
+							  () => questProgress.egypt = SOLVED)
+    console.log(map.map.get(7,32).overlay)
+    return map
+}
+
+function egypt(spawn) {
+    let egypt = Object.create(worldPrototype, {
+	map: {value: edfuMap()}
+    })
+    egypt.centerOrigin(spawn)
+    egypt.map.objList.push(player)
+    
+    egypt.eventLogic = function(worldEvent) {
+	egypt.eLogic(worldEvent)
+    }
+    egypt.overlayCallback = function() {
+	 egypt.draw()
+    }
+
+    return egypt
+}
+
 function chartesMap() {
     let map = Object.create(mapPrototype)
     map.rows = 97
@@ -1794,6 +2074,7 @@ function chartesMap() {
     map.portals = []
     map.triggers = []
     map.map = mapFromTemplate(mapData.get("france").template, franceCellMap)
+    map.portals.push(rowPortal(96, overworld, FRANCE_SPAWN))
     return map
 }
 
@@ -1823,7 +2104,7 @@ function basilicaMap() {
     map.portals = []
     map.triggers = []
     map.map = mapFromTemplate(mapData.get("rome").template, romeCellMap)
-    map.portals.push(singleCellPortal(63, 33, overworld, ROME_SPAWN))
+    map.portals.push(rowPortal(63, overworld, ROME_SPAWN))
     map.objList.push(basilicaCorner(24,25,[1,1]))
     map.objList.push(basilicaCorner(40,25,[1,-1]))
     map.objList.push(basilicaCorner(24,41,[-1,1]))
@@ -1921,7 +2202,7 @@ function parthenonMap() {
 	overlay: textOverlay(GREEK_VICTORY_TEXT)
     }
     map.triggers.push(victoryTrigger)
-    map.portals.push(singleCellPortal(0,12, overworld, GREECE_SPAWN))
+    map.portals.push(rowPortal(0, overworld, GREECE_SPAWN))
 
     return map
 }
@@ -1944,22 +2225,35 @@ function greece(spawn) {
     
 }
 
+
+
 function overworldMap() {
     let map = Object.create(mapPrototype)
     map.rows = 17
     map.cols = 26 * 4
-    map.spawns = [[10,3],
+    map.spawns = [[7,66],
 		  [7,13],
 		  [7,26],
 		  [7,39],
-		  [7,52]
+		  [7,52],
+		  [7,66]
 		  ]
     map.objList = []
     map.triggers = []
     map.portals = []
     map.map = mapFromTemplate(mapData.get("overworld").template, overworldCellMap)
-    map.portals.push(singleCellPortal(6,12,greece, MAIN_SPAWN))
-    map.portals.push(singleCellPortal(6, 26, rome, MAIN_SPAWN))
+    map.portals.push(doorPortal(6,13,greece, MAIN_SPAWN))
+    map.portals.push(doorPortal(6, 26, rome, MAIN_SPAWN))
+    map.portals.push(doorPortal(6, 39, france, MAIN_SPAWN))
+    map.portals.push(doorPortal(6, 52, egypt, MAIN_SPAWN))
+    map.portals.push(rowRangePortal(6, 65, 68, end, MAIN_SPAWN))
+
+    if (totalVictory()) {
+	map.map.get(6,65).isObstacle = false
+	map.map.get(6,66).isObstacle = false
+	map.map.get(6,67).isObstacle = false
+	map.map.get(6,68).isObstacle = false
+    }
     //map.map.get(4,5).overlay = textOverlay(TEST_STRING)
   //  console.log(map.map)
     return map
@@ -1992,7 +2286,7 @@ var universe = {
 
 function createUniverse() {
     registerEventListeners()
-    universe.activeWorld = france(MAIN_SPAWN)
+    universe.activeWorld = overworld(MAIN_SPAWN)
     universe.startGame()
 }
 
@@ -2001,7 +2295,7 @@ function createUniverse() {
 // LOADING AJAX STUFF AND KICK STARTING THE GAME
 //############################################################################
 var ajaxCompleted = 0
-var ajaxMax = 4 //wtf why don't work?
+var ajaxMax = 5 //wtf why don't work?
 
 
 for (const name of mapData.keys()) {
