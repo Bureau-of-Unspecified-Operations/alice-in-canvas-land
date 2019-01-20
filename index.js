@@ -24,21 +24,36 @@ const RED = "rgb(255,0,0)"
 const ORANGE = "rgb(255,140,0)"
 const SANDY_YELLOW = "rgb(253,223,119)"
 const SANDY_BROWN = "rgb(244,164,96)"
+const IVORY = "#fffff0"
+const LIMESTONE = "rgb(246,248,220)"
+const GRANITE = "#4A5355"
+const BRONZE = "#88540b"
 
 const END_DARK_ALPHA = 0.5
 
 
-const BACKGROUND_COLOR = BLACK
+const VOID_COLOR = BLACK
+const PORTAL_COLOR = SILVER
+const PORTAL_FADE_COLOR = BLACK
+
 const TEXT_BACKGROUND_COLOR = "rgb(222,184,135)"
 const TEXT_FONT = "20px Arial"
 const TEXT_COLOR = "rgb(0,0,0)"
 
-const GREEK_FLOOR_COLOR = LIGHT_GREY
+const GREEK_FLOOR_COLOR = IVORY
 const GREEK_WALL_COLOR = SILVER
-const GREEK_COL_COLOR = SIENNA
-const PORTAL_COLOR = HOT_PINK
+const GREEK_COL_COLOR = SILVER
+
 
 const CORNER_OBJ_COLOR = SIENNA
+const VESTIBULE_COLOR = BRONZE
+const ROMAN_WALL_COLOR = VESTIBULE_COLOR
+const ROMAN_FLOOR_COLOR = GRANITE
+
+const CROSS_COLOR = ORANGE
+const FRANCE_FLOOR_COLOR = GRANITE
+const FRANCE_WALL_COLOR = BRONZE
+const FRANCE_OFF_COLOR = SIENNA
 
 const EGYPT_FLOOR_COLOR = SANDY_YELLOW
 const EGYPT_WALL_COLOR = SANDY_BROWN
@@ -55,6 +70,7 @@ const TO_STRING = "You can't tell what's different, but the world is not the sam
 const GREEK_VICTORY_TEXT = "You feel a rumbling deep in the earth. Something has important has happened somewhere, and you feel that your task here is complete."
 const ROMAN_VICTORY_TEXT = GREEK_VICTORY_TEXT
 const ROMAN_PROGRESS_TEXT = "oH,that hit the spot"
+const FRANCE_VICTORY_TEXT = "You dissoled the facade!"
 const EGYPT_VICTORY_TEXT = "Who are you who can walk through walls that aren't there? Surely no mere door could stop you..."
 
 
@@ -62,6 +78,8 @@ const EGYPT_VICTORY_TEXT = "Who are you who can walk through walls that aren't t
 //####################################
 // CONST VALUES
 //###################################
+const PORTAL_POINTS_CONST = 50
+const PORTAL_POINTS_RADIUS = 1
 
 const CELL_SIZE = 40
 const HALF_CELL = Math.floor(CELL_SIZE / 2)
@@ -283,7 +301,6 @@ var bigDrawable = {
 	})
 	if (d) {
 	    let coord = gridToGlobal(relRow, relCol, delta, dir)
-	   // console.log(`coord = ${coord} relr,c=[${relRow},${relCol}]`)
 	    this.drawImg(coord[0], coord[1], alpha)
 	   // drawGridRect(coord[0], coord[1], relRow, relCol, "rgb(0,255,255)")//default
 	}
@@ -321,29 +338,6 @@ var player = Object.create(drawable, {
     }}
 })
 
-function rock(row, col) {
-    var rock = Object.create(drawable, {
-    row: {value: row,
-	  writable: true
-	 },
-    col: {value: col,
-	  writable: true
-	 },
-    drawImg: {value: function(x, y, alpha) {
-	drawGridRect(x, y, "rgb(0,255,0)")
-    }},
-    isMoving: {value: false,
-		 writable: true
-		},
-    })
-    rock.contains = function(row, col) {
-	return rock.row === row && rock.col === col
-    }
-    rock.getFrontier = function(dir) {
-	return [[incRow(rock.row, dir), incCol(rock.col, dir)]]
-    }
-    return rock
-}
 
 var overLay = {
     registerCallback: function(callback) {
@@ -405,7 +399,143 @@ function textOverlayVictoryTrigger(text, trigger) {
     overlay.activateTrigger = trigger
     return overlay
 }
-    
+
+
+function deltaDir(delta, dir) {
+    let index = Math.floor(Math.abs(dir[0] + dir[1]) / 2)
+    let x = delta[1 - index] * dir[0]
+    let y = delta[index] * dir[1]
+    return [x, y]
+}
+
+function gridDeltaDir(delta, dir) {
+    let index = Math.floor(Math.abs(dir[0] + dir[1]) / 2)
+    let r = delta[1 - index] * dir[1]
+    let c = delta[index] * dir[0]
+    return [r,c]
+}
+
+function dumbMoveDir(delta, dir) {
+    let index = Math.floor(Math.abs(dir[0] + dir[1]) / 2)
+    let x = delta[1 - index] * dir[1]
+    let y = delta[index] * dir[0]
+    return [x, y]
+}
+
+
+
+function dist(p0,p1) {
+    let sum = 0
+    for (i = 0; i < p0.length; i ++) {
+	sum += Math.pow(Math.abs(p0[i] - p1[i]), 2)
+    }
+    return Math.sqrt(sum)
+}
+
+//https://stackoverflow.com/questions/12219802/a-javascript-function-that-returns-the-x-y-points-of-intersection-between-two-ci
+// ^thanks dude
+function intersection(x0, y0, r0, x1, y1, r1) {
+        var a, dx, dy, d, h, rx, ry;
+        var x2, y2;
+
+        /* dx and dy are the vertical and horizontal distances between
+         * the circle centers.
+         */
+        dx = x1 - x0;
+        dy = y1 - y0;
+
+        /* Determine the straight-line distance between the centers. */
+        d = Math.sqrt((dy*dy) + (dx*dx));
+
+        /* Check for solvability. */
+        if (d > (r0 + r1)) {
+            /* no solution. circles do not intersect. */
+            return false;
+        }
+        if (d < Math.abs(r0 - r1)) {
+            /* no solution. one circle is contained in the other */
+            return false;
+        }
+
+        /* 'point 2' is the point where the line through the circle
+         * intersection points crosses the line between the circle
+         * centers.  
+         */
+
+        /* Determine the distance from point 0 to point 2. */
+        a = ((r0*r0) - (r1*r1) + (d*d)) / (2.0 * d) ;
+
+        /* Determine the coordinates of point 2. */
+        x2 = x0 + (dx * a/d);
+        y2 = y0 + (dy * a/d);
+
+        /* Determine the distance from point 2 to either of the
+         * intersection points.
+         */
+        h = Math.sqrt((r0*r0) - (a*a));
+
+        /* Now determine the offsets of the intersection points from
+         * point 2.
+         */
+        rx = -dy * (h/d);
+        ry = dx * (h/d);
+
+        /* Determine the absolute intersection points. */
+        var xi = x2 + rx;
+        var xi_prime = x2 - rx;
+        var yi = y2 + ry;
+        var yi_prime = y2 - ry;
+
+        return [xi, xi_prime, yi, yi_prime];
+    }
+
+var turtle = {
+    x: 0,
+    y: 0,
+    beginPath: function() {
+	ctx.beginPath()
+    },
+    moveTo: function(delta) {
+	this.x += delta[0]
+	this.y += delta[1]
+	ctx.moveTo(this.x, this.y)
+	
+    },
+    lineTo: function(delta) {
+	this.x += delta[0]
+	this.y += delta[1]
+	ctx.lineTo(this.x, this.y)
+    },
+    arcTo: function(delta, radius, innerArc) {
+	let xp = this.x + delta[0]
+	let yp = this.y + delta[1]
+	let centers = intersection(this.x, this.y, radius, xp, yp, radius)
+	
+	let cx = (innerArc) ? centers[0] : centers[1]  //guessed at these, let's see if they actually work
+	let cy = (innerArc) ? centers[2] : centers[3]
+	let startAngle = Math.atan2(this.y - cy, this.x - cx)
+	let endAngle  = Math.atan2(yp - cy, xp - cx)
+	ctx.arc(cx, cy, radius, startAngle, endAngle, !innerArc)
+	this.x = xp
+	this.y = yp
+    },
+    closePath: function() {
+	ctx.closePath()
+    },
+    stroke: function(color) {
+	let orig = ctx.strokeStyle
+	ctx.strokeStyle = color
+	ctx.stroke()
+	ctx.strokeStyle = orig
+    },
+    fill: function(color) {
+	let orig = ctx.fillStyle
+	ctx.fillStyle = color
+	ctx.fill()
+	ctx.fillStyle = orig
+    }
+}
+
 
 
 
@@ -438,13 +568,32 @@ function worldEdgeCell() {
     return cell
 }
 
-function portalCell() {
+function portalCell(dir) {
     let cell = Object.create(drawable)
+    let points = []
+    for (i = 0; i < 50; i ++) {
+	let dx = Math.floor(Math.random() * CELL_SIZE)
+	let dy = Math.floor(Math.random() * CELL_SIZE)
+	points.push([dx,dy])
+    }
+    console.log(points)
     cell.drawImg = function(x, y, alpha) {
-	drawGridRect(x, y, PORTAL_COLOR)
+	drawGradientRect(x, y, PORTAL_COLOR, PORTAL_FADE_COLOR, dir)
+	//drawRect(x, y, BLUE)
+/*	points.forEach(function(pnt) {
+	    drawCircle(x + pnt[0], y + pnt[1], 1, PORTAL_SPOT_COLOR)
+	})*/
     }
     cell.isObstacle = false
     return cell
+}
+
+function lowerPortal() {
+    return portalCell(1)
+}
+
+function upperPortal() {
+    return portalCell(-1)
 }
 
 function greekCol(size) {
@@ -590,11 +739,12 @@ function overworldFloor() {
 
 //////////////////////////////////////////
 
-function linkedCell(link, transform, isObstacle) {
+function linkedCell(link, transform, isObstacle, color) {
     let cell = Object.create(drawable)
     cell.drawImg = function(x, y, alpha) {
 	if (!link.hasBeenDrawn) {
 	    let coord = transform(x, y)
+	    drawRect(x, y, color)
 	    link.drawImg(coord[0], coord[1], alpha)
 	}
     }
@@ -605,7 +755,27 @@ function linkedCell(link, transform, isObstacle) {
 function romeAlcove(dir) {
     let cell = Object.create(drawable)
     cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, HOT_PINK)
+	x = (dir[0] == 1) ? x : x + CELL_SIZE
+	y = (dir[1] == 1) ? y : y + CELL_SIZE
+	turtle.x = x
+	turtle.y = y
+	turtle.beginPath()
+	turtle.moveTo(deltaDir([-8 * CELL_SIZE, 10 * CELL_SIZE], dir))
+
+	turtle.arcTo(deltaDir([17 * CELL_SIZE, 0], dir), 8 * CELL_SIZE + HALF_CELL, true)
+	
+	turtle.lineTo(deltaDir([-2 * CELL_SIZE, 0], dir))
+	turtle.lineTo(deltaDir([0, -2 * CELL_SIZE], dir))
+	turtle.lineTo(deltaDir([-2 * CELL_SIZE, 0], dir))
+
+	turtle.arcTo(deltaDir([-9 * CELL_SIZE, 0], dir), Math.floor(9 / 2 * CELL_SIZE), false)
+
+	turtle.lineTo(deltaDir([-2 * CELL_SIZE, 0], dir))
+	turtle.lineTo(deltaDir([0, 2 * CELL_SIZE], dir))
+	turtle.lineTo(deltaDir([-2 * CELL_SIZE, 0], dir))
+
+	turtle.closePath()
+	turtle.fill(VESTIBULE_COLOR)
     }
     cell.isObstacle = true
     cell.isLink = true
@@ -613,56 +783,35 @@ function romeAlcove(dir) {
 }
 
 function romeAlcoveTop() {
-    return romeAlcove([0,-1])
+    return romeAlcove([1,1])
 }
 
 function romeAlcoveRight() {
-    return romeAlcove([1,0])
+    return romeAlcove([-1,1])
 }
 
 function romeAlcoveLeft() {
-    return romeAlcove([-1, 0])
+    return romeAlcove([1, -1])
 }
 
-////
-function romeFloorImg(dir) {
-    let cell = Object.create(drawable)
-    cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, BLUE)
-    }
-    cell.isObstacle = false
-    cell.isLink = true
-    return cell
-}
 
-function romeFloorImgTL() {
-    return romeFloorImg([1,1])
-}
-
-function romeFloorImgTR() {
-    return romeFloorImg([-1,1])
-}
-
-function romeFloorImgBL() {
-    return romeFloorImg([1,-1])
-}
-
-function romeFloorImgBR() {
-    return romeFloorImg([-1,-1])
-}
-////
 
 function romeWall() {
     let cell = Object.create(drawable)
     cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, SIENNA)
+	drawRect(x, y, ROMAN_WALL_COLOR)
     }
     cell.isObstacle = true
     return cell
 }
 
 function romeFloor() {
-    return greekFloorCell()
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, ROMAN_FLOOR_COLOR)
+    }
+    cell.isObstacle = false
+    return cell
 }
 
 function romeCorner(dir) {
@@ -725,7 +874,7 @@ function romeSquare() {
 function romeVest(dir) {
     let cell = Object.create(drawable)
     cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, HOT_PINK)
+	
     }
     cell.isObstacle = true
     cell.isLink = true
@@ -743,7 +892,26 @@ function romeVestRight() {
 function romeWeirdVest() {
     let cell = Object.create(drawable)
     cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, HOT_PINK)
+	turtle.x = x
+	turtle.y = y
+	turtle.beginPath()
+	turtle.lineTo([2 * CELL_SIZE, 0])
+	turtle.arcTo([4 * CELL_SIZE, 3 * CELL_SIZE], 3 * CELL_SIZE, false)
+	turtle.lineTo([0, CELL_SIZE])
+	turtle.lineTo([-6 * CELL_SIZE, 0])
+	turtle.lineTo([0, -4 * CELL_SIZE])
+	turtle.closePath()
+	turtle.fill(ROMAN_WALL_COLOR)
+
+	turtle.beginPath()
+	turtle.moveTo([11 * CELL_SIZE, 0])
+	turtle.lineTo([2 * CELL_SIZE, 0])
+	turtle.lineTo([0, 4 * CELL_SIZE])
+	turtle.lineTo([-6 * CELL_SIZE, 0])
+	turtle.lineTo([0, - CELL_SIZE])
+	turtle.arcTo([4 * CELL_SIZE, -3 * CELL_SIZE], 3 * CELL_SIZE, false)
+	turtle.closePath()
+	turtle.fill(ROMAN_WALL_COLOR)
     }
     cell.isObstacle = true
     cell.isLink = true
@@ -756,13 +924,19 @@ function romeWeirdVest() {
 /////////////////////////////////////////
 
 function franceFloor() {
-    return romeFloor()
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, FRANCE_FLOOR_COLOR)
+    }
+    cell.isObstacle = false
+    cell.isLink = false
+    return cell
 }
 
 function franceBigPillar() {
     let cell = Object.create(drawable)
     cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, BLUE)
+	drawRect(x, y, FRANCE_OFF_COLOR)
     }
     cell.isObstacle = true
     cell.isLink = false
@@ -777,160 +951,73 @@ function franceSmallPillar() {
     return franceBigPillar()
 }
 
-function nave(dir) {
-    let cell = Object.create(drawable)
-    cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, SIENNA)
-    }
-    cell.isObstacle = true
-    cell.isLink = true
-    return cell
-}
 
-function franceNaveL() {
-    return nave([])
-}
-
-function franceNaveR() {
-    return nave([])
-}
 
 function franceWall() {
     let cell = Object.create(drawable)
     cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, SIENNA)
+	drawRect(x, y, FRANCE_WALL_COLOR)
     }
     cell.isObstacle = true
     cell.isLink = false
     return cell
 }
 
-function franceNarthTL() {
-    let cell = Object.create(drawable)
-    cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, SIENNA)
-    }
-    cell.isObstacle = true
-    cell.isLink = true
-    return cell
-}
 
-function franceNarthTR() {
-    let cell = Object.create(drawable)
-    cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, SIENNA)
-    }
-    cell.isObstacle = true
-    cell.isLink = true
-    return cell
-}
-
-function franceNarthBL() {
-    let cell = Object.create(drawable)
-    cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, SIENNA)
-    }
-    cell.isObstacle = true
-    cell.isLink = true
-    return cell
-}
-
-function franceNarthBR() {
-    let cell = Object.create(drawable)
-    cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, SIENNA)
-    }
-    cell.isObstacle = true
-    cell.isLink = true
-    return cell
-}
 
 function franceEntryPillar() {
     return franceBigPillar()
 }
 
-function franceCorner(dir) {
+function franceOffColor() {
     let cell = Object.create(drawable)
     cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, SIENNA)
+	drawRect(x, y, FRANCE_OFF_COLOR)
     }
     cell.isObstacle = true
-    cell.isLink = true
+    cell.isLink = false
     return cell
 }
-
-function franceCornerBR() {
-    return franceCorner([])
-}
-
-function franceCornerBL() {
-    return franceCorner([])
-}
-
-function franceNaveDown() {
-    return nave([])
-}
-
-function franceNaveUp() {
-    return nave([])
-}
-
-function stairs(dir) {
-    let cell = Object.create(drawable)
-    cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, SIENNA)
-    }
-    cell.isObstacle = true
-    cell.isLink = true
-    return cell
-}
-
-function franceStairsTR() {
-    return stairs([])
-}
-
-function franceStairsTL() {
-    return stairs([])
-}
-
-function franceStairsBL() {
-    return stairs([])
-}
-
-function franceStairsBR() {
-    return stairs([])
-}
-
-function franceCornerTR() {
-    return franceCorner([])
-}
-
-function franceCornerTL() {
-    return franceCorner([])
-}
-
-function fBit(dir) {
-    let cell = Object.create(drawable)
-    cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, SIENNA)
-    }
-    cell.isObstacle = true
-    cell.isLink = true
-    return cell
-}
-
-function fBitL() {
-    return fBit([])
-}
-
-function fBitR() {
-    return fBit([])
-}
+    
 
 function franceArch() {
     let cell = Object.create(drawable)
     cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, SIENNA)
+	turtle.x = x
+	turtle.y = y
+	turtle.beginPath()
+	turtle.moveTo([-HALF_CELL - 2 * CELL_SIZE, 5 * CELL_SIZE])
+	turtle.arcTo([6 * CELL_SIZE, 0], 3 * CELL_SIZE, true)
+	turtle.arcTo([6 * CELL_SIZE + HALF_CELL, 3 * CELL_SIZE], 14 * CELL_SIZE, true)
+	turtle.lineTo([CELL_SIZE, -CELL_SIZE])
+	turtle.arcTo([3 * CELL_SIZE, 3 * CELL_SIZE], Math.floor(1.5 * CELL_SIZE * Math.sqrt(2) + 1), true)
+	turtle.lineTo([-CELL_SIZE, CELL_SIZE])
+	turtle.arcTo([2 * CELL_SIZE, 8 * CELL_SIZE], 14 * CELL_SIZE, true)
+	turtle.lineTo([CELL_SIZE, 0])
+	turtle.arcTo([-2 * CELL_SIZE, -8 * CELL_SIZE], 14 * CELL_SIZE, false)
+	turtle.lineTo([CELL_SIZE, - CELL_SIZE])
+	turtle.arcTo([-4 * CELL_SIZE, -4 * CELL_SIZE], Math.floor(2 * CELL_SIZE * Math.sqrt(2) + 1), false)
+	turtle.lineTo([-CELL_SIZE, CELL_SIZE])
+	turtle.arcTo([-6 * CELL_SIZE + HALF_CELL, -3 * CELL_SIZE], 14 * CELL_SIZE, false)
+	// MIDDLE
+	turtle.arcTo([-8 * CELL_SIZE, 0], 4 * CELL_SIZE, false)
+	// MIDDLE
+	turtle.arcTo([-6 * CELL_SIZE + HALF_CELL, 3 * CELL_SIZE], 14 * CELL_SIZE, false)
+	turtle.lineTo([-CELL_SIZE, -CELL_SIZE])
+	turtle.arcTo([-4 * CELL_SIZE, 4 * CELL_SIZE], Math.floor(2 * CELL_SIZE * Math.sqrt(2) + 1), false)
+	turtle.lineTo([CELL_SIZE, CELL_SIZE])
+	turtle.arcTo([-2 * CELL_SIZE, 8 * CELL_SIZE], 14 * CELL_SIZE, false)
+	turtle.lineTo([CELL_SIZE, 0])
+	turtle.arcTo([2 * CELL_SIZE, -8 * CELL_SIZE], 14 * CELL_SIZE, true)
+	turtle.lineTo([-CELL_SIZE, -CELL_SIZE])
+	turtle.arcTo([3 * CELL_SIZE, -3 * CELL_SIZE], Math.floor(1.5 * CELL_SIZE * Math.sqrt(2) + 1), true)
+	turtle.lineTo([CELL_SIZE, CELL_SIZE])
+	turtle.arcTo([6 * CELL_SIZE + HALF_CELL, -3 * CELL_SIZE], 14 * CELL_SIZE, true)
+	
+	//turtle.arcTo([3 * CELL_SIZE, 3 * CELL_SIZE], 3 * CELL_SIZE, true)
+
+	turtle.closePath()
+	turtle.fill(FRANCE_WALL_COLOR)
     }
     cell.isObstacle = true
     cell.isLink = true
@@ -1072,140 +1159,119 @@ function smallColObj(row, col) {
     return obj
 }
 
-function deltaDir(delta, dir) {
-    let index = Math.floor(Math.abs(dir[0] + dir[1]) / 2)
-    let x = delta[1 - index] * dir[0]
-    let y = delta[index] * dir[1]
-    return [x, y]
-}
-
-function gridDeltaDir(delta, dir) {
-    let index = Math.floor(Math.abs(dir[0] + dir[1]) / 2)
-    let r = delta[1 - index] * dir[1]
-    let c = delta[index] * dir[0]
-    return [r,c]
-}
-
-function dumbMoveDir(delta, dir) {
-    let index = Math.floor(Math.abs(dir[0] + dir[1]) / 2)
-    let x = delta[1 - index] * dir[1]
-    let y = delta[index] * dir[0]
-    return [x, y]
-}
-
-
-
-function dist(p0,p1) {
-    let sum = 0
-    for (i = 0; i < p0.length; i ++) {
-	sum += Math.pow(Math.abs(p0[i] - p1[i]), 2)
-    }
-    return Math.sqrt(sum)
-}
-
-//https://stackoverflow.com/questions/12219802/a-javascript-function-that-returns-the-x-y-points-of-intersection-between-two-ci
-// ^thanks dude
-function intersection(x0, y0, r0, x1, y1, r1) {
-        var a, dx, dy, d, h, rx, ry;
-        var x2, y2;
-
-        /* dx and dy are the vertical and horizontal distances between
-         * the circle centers.
-         */
-        dx = x1 - x0;
-        dy = y1 - y0;
-
-        /* Determine the straight-line distance between the centers. */
-        d = Math.sqrt((dy*dy) + (dx*dx));
-
-        /* Check for solvability. */
-        if (d > (r0 + r1)) {
-            /* no solution. circles do not intersect. */
-            return false;
-        }
-        if (d < Math.abs(r0 - r1)) {
-            /* no solution. one circle is contained in the other */
-            return false;
-        }
-
-        /* 'point 2' is the point where the line through the circle
-         * intersection points crosses the line between the circle
-         * centers.  
-         */
-
-        /* Determine the distance from point 0 to point 2. */
-        a = ((r0*r0) - (r1*r1) + (d*d)) / (2.0 * d) ;
-
-        /* Determine the coordinates of point 2. */
-        x2 = x0 + (dx * a/d);
-        y2 = y0 + (dy * a/d);
-
-        /* Determine the distance from point 2 to either of the
-         * intersection points.
-         */
-        h = Math.sqrt((r0*r0) - (a*a));
-
-        /* Now determine the offsets of the intersection points from
-         * point 2.
-         */
-        rx = -dy * (h/d);
-        ry = dx * (h/d);
-
-        /* Determine the absolute intersection points. */
-        var xi = x2 + rx;
-        var xi_prime = x2 - rx;
-        var yi = y2 + ry;
-        var yi_prime = y2 - ry;
-
-        return [xi, xi_prime, yi, yi_prime];
+function crossObj(row, col) {
+    let cross = Object.create(bigDrawable, {
+	isMoving: {value:false}
+    })
+    cross.row = row
+    cross.col = col
+    cross.drawImg = function(x, y, alpha) {
+	console.log("drawing cross")
+	turtle.x = x
+	turtle.y = y
+	turtle.beginPath()
+	turtle.moveTo([0,0])
+	turtle.lineTo([CELL_SIZE, 0])
+	turtle.lineTo([0, CELL_SIZE])
+	turtle.lineTo([CELL_SIZE, 0])
+	turtle.lineTo([0, CELL_SIZE])
+	turtle.lineTo([-CELL_SIZE, 0])
+	turtle.lineTo([0, 2 * CELL_SIZE])
+	turtle.lineTo([-CELL_SIZE, 0])
+	turtle.lineTo([0, -2 * CELL_SIZE])
+	turtle.lineTo([-CELL_SIZE, 0])
+	turtle.lineTo([0, -CELL_SIZE])
+	turtle.lineTo([CELL_SIZE, 0])
+	turtle.lineTo([0, -CELL_SIZE])
+	turtle.closePath()
+	turtle.fill(FRANCE_OFF_COLOR)
     }
 
-var turtle = {
-    x: 0,
-    y: 0,
-    beginPath: function() {
-	ctx.beginPath()
-    },
-    moveTo: function(delta) {
-	this.x += delta[0]
-	this.y += delta[1]
-	ctx.moveTo(this.x, this.y)
+    cross.contains = function(r,c) {
+	if ( (c == cross.col && !(r < cross.row) && !(r > cross.row + 3)) ||
+	     (r == cross.row + 1 && !(c < cross.col - 1) && !(c > cross.col + 1))
+	   ) {
+	    return true
+	}
+	else return false
+    }
+    cross.getFrontier = function(dir){
+	return [] //not needed, because cross shouldn't move
+    }
+    cross.getCells = function(r, c) {
+	let cells = []
+	for (i = 0; i < 4; i ++){
+	    cells.push([r + i, c])
+	}
+	cells.push([r + 1, c - 1])
+	cells.push([r + 1, c + 1])
+	return cells
+    }
+    return cross
+}
+
+function fryingPan(row, col) {
+    let pan = Object.create(drawable)
+    pan.drawImg = function(x, y, alpha) {
+	drawRect(x, y, FRANCE_FLOOR_COLOR)
+	turtle.x = x
+	turtle.y = y
 	
-    },
-    lineTo: function(delta) {
-	this.x += delta[0]
-	this.y += delta[1]
-	ctx.lineTo(this.x, this.y)
-    },
-    arcTo: function(delta, radius, innerArc) {
-	let xp = this.x + delta[0]
-	let yp = this.y + delta[1]
-	let centers = intersection(this.x, this.y, radius, xp, yp, radius)
-	
-	let cx = (innerArc) ? centers[0] : centers[1]  //guessed at these, let's see if they actually work
-	let cy = (innerArc) ? centers[2] : centers[3]
-	let startAngle = Math.atan2(this.y - cy, this.x - cx)
-	let endAngle  = Math.atan2(yp - cy, xp - cx)
-	ctx.arc(cx, cy, radius, startAngle, endAngle, !innerArc)
-	this.x = xp
-	this.y = yp
-    },
-    closePath: function() {
-	ctx.closePath()
-    },
-    stroke: function(color) {
-	let orig = ctx.strokeStyle
-	ctx.strokeStyle = color
-	ctx.stroke()
-	ctx.strokeStyle = orig
-    },
-    fill: function(color) {
-	let orig = ctx.fillStyle
-	ctx.fillStyle = color
-	ctx.fill()
-	ctx.fillStyle = orig
     }
+    pan.isMoving = false
+    pan.contains = pan.singleCellContains
+    pan.getFrontier = pan.getSingleCellFrontier
+    pan.row = row
+    pan.col = col
+    return pan
 }
+
+function teaCup(row, col) {
+    let cup = Object.create(drawable)
+    cup.drawImg = function(x, y, alpha) {
+	drawRect(x, y, FRANCE_FLOOR_COLOR)
+	turtle.x = x
+	turtle.y = y
+	turtle.beginPath()
+	let unit = Math.floor(CELL_SIZE / 20)
+	turtle.moveTo([unit,unit])
+	turtle.lineTo([0,unit * 12])
+	turtle.arcTo([10 * unit,0], 12 * unit, false)
+	turtle.lineTo([0,-3 * unit])
+	turtle.arcTo([0, -6 * unit], 3 * unit, false)
+
+
+	turtle.fill(ORANGE)
+    }
+    cup.isMoving = false
+    cup.contains = cup.singleCellContains
+    cup.getFrontier = cup.getSingleCellFrontier
+    cup.row = row
+    cup.col = col
+    return cup
+}
+
+function ball(row, col) {
+    let ball = Object.create(drawable)
+    ball.drawImg = function(x, y, alpha) {
+	drawRect(x, y, SIENNA)
+    }
+    ball.isMoving = false
+    ball.contains = ball.singleCellContains
+    ball.getFrontier = ball.getSingleCellFrontier
+    ball.row = row
+    ball.col = col
+    return ball
+}
+
+
+
+
+
+
+//////////////////////////////////////////////////
+/////////////////////////////////////////////////
+
 
 function basilicaCorner(row, col, dir) {
     let obj = Object.create(bigDrawable)
@@ -1346,7 +1412,7 @@ function codeToKey(code) {
 
 // allows for vanilla mapping, as well as linking blank cells to
 // "r.c.isObstacle" is the format for cells to be linked
-function mapFromTemplate(template, cellMap) {
+function mapFromTemplate(template, cellMap, innerLinkColor, outerLinkColor) {
     // console.log(template)
   //  console.log(cellMap)
     var linkMap = new Map()
@@ -1394,9 +1460,10 @@ function mapFromTemplate(template, cellMap) {
 	    return [newX, newY]
 	}
 	let link = linkMap.get(codeToKey(cellObj.code))
-//	console.log(`code=${cellObj.code}`)
-//	console.log(link)
-	let cell = linkedCell(link, transform, data[2] === "true")
+	console.log(`code=${cellObj.code}`)
+		console.log(link)
+	let color = (data[3] == "true") ? outerLinkColor : innerLinkColor
+	let cell = linkedCell(link, transform, data[2] === "true", color)
 	map.add(cellObj.row, cellObj.col, cell) 
     })
 
@@ -1409,7 +1476,7 @@ function mapFromTemplate(template, cellMap) {
 //#####################################################################
 const greekCellMap = new Map()
 greekCellMap.set("0", worldEdgeCell)
-greekCellMap.set("1", portalCell)
+greekCellMap.set("1", upperPortal)
 greekCellMap.set("2", bigCol)
 greekCellMap.set("3", medCol)
 greekCellMap.set("4", smallCol)
@@ -1438,24 +1505,11 @@ const romeCellMap = new Map()
 romeCellMap.set("0", worldEdgeCell)
 romeCellMap.set("1", romeWall)
 romeCellMap.set("2", romeFloor)
-romeCellMap.set("3", romeFloorImgTL)
-romeCellMap.set("4", romeFloorImgTR)
-romeCellMap.set("5", romeFloorImgBR)
-romeCellMap.set("6", romeFloorImgBL)
 romeCellMap.set("7", romeAlcoveTop)
 romeCellMap.set("8", romeAlcoveRight)
 romeCellMap.set("9", romeAlcoveLeft)
-romeCellMap.set("10", romeCornerTL)
-romeCellMap.set("11", romeCornerTR)
-romeCellMap.set("12", romeCornerBR)
-romeCellMap.set("13", romeCornerBL)
-romeCellMap.set("14", romeSquare)
-romeCellMap.set("15", romeMiddleRectLeft)
-romeCellMap.set("16", romeMiddleRectRight)
-romeCellMap.set("17", romeVestLeft)
-romeCellMap.set("18", romeVestRight)
 romeCellMap.set("19", romeWeirdVest)
-romeCellMap.set("20", portalCell)
+romeCellMap.set("20", lowerPortal)
 
 const franceCellMap = new Map()
 franceCellMap.set("0", worldEdgeCell)
@@ -1463,27 +1517,14 @@ franceCellMap.set("1", franceFloor)
 franceCellMap.set("2", franceBigPillar)
 franceCellMap.set("3", franceMedPillar)
 franceCellMap.set("4", franceSmallPillar)
-franceCellMap.set("7", franceNaveL)
-franceCellMap.set("8", franceNaveR)
+
 franceCellMap.set("9", franceWall)
-franceCellMap.set("10", franceNarthTL)
-franceCellMap.set("11", franceNarthTR)
-franceCellMap.set("12", franceNarthBL)
-franceCellMap.set("13", franceNarthBR)
+
 franceCellMap.set("14", franceEntryPillar)
-franceCellMap.set("15", portalCell)
-franceCellMap.set("16", franceCornerBR)
-franceCellMap.set("17", franceCornerBL)
-franceCellMap.set("19", franceNaveDown)
-franceCellMap.set("20", franceNaveUp)
-franceCellMap.set("22", franceStairsTR)
-franceCellMap.set("23", franceStairsBR)
-franceCellMap.set("24", franceStairsTL)
-franceCellMap.set("25", franceStairsBL)
-franceCellMap.set("26", fBitL)
-franceCellMap.set("27", fBitR)
-franceCellMap.set("28", franceCornerTL)
-franceCellMap.set("29", franceCornerTR)
+franceCellMap.set("15", lowerPortal)
+
+franceCellMap.set("20", franceOffColor)
+
 franceCellMap.set("30", franceArch)
 
 const egyptCellMap = new Map()
@@ -1493,7 +1534,7 @@ egyptCellMap.set("2", egyptWall)
 egyptCellMap.set("3", egyptBigCol)
 egyptCellMap.set("4", egyptSmallCol)
 egyptCellMap.set("5", egyptPharoh)
-egyptCellMap.set("6", portalCell)
+egyptCellMap.set("6", lowerPortal)
 egyptCellMap.set("7", egyptFakeWall)
 
 const endCellMap = new Map()
@@ -1502,7 +1543,7 @@ endCellMap.set("1", endDarkFloor)
 endCellMap.set("2", endDarkWall)
 endCellMap.set("3", endTorch)
 endCellMap.set("4", endSage)
-endCellMap.set("5", portalCell)
+endCellMap.set("5", lowerPortal)
 endCellMap.set("7", endLightFloor)
 endCellMap.set("6", endLightWall)
 
@@ -1551,6 +1592,19 @@ function gridToGlobal(row, col, delta, dir) {
     var y = ORIGIN.y - Math.floor(delta * dir[1] * CELL_SIZE) + row * CELL_SIZE
    // console.log(`x,y=${x},${y}`)
     return [x,y]
+}
+
+//dir take as 1 fade down -1 fade up
+function drawGradientRect(x, y, fstC, sndC, dir) {
+    let fst = (dir == 1) ? y : y + CELL_SIZE
+    let snd = (dir == 1) ? y + CELL_SIZE : y
+    let grd = ctx.createLinearGradient(0, fst, 0, snd)
+    grd.addColorStop(0,fstC)
+    grd.addColorStop(1,sndC)
+    let orig = ctx.fillStyle
+    ctx.fillStyle = grd
+    ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE)
+    ctx.fillStyle = orig
 }
 
 function darkenRect(x, y, alpha) {
@@ -1658,14 +1712,14 @@ function clearCanvas() {
 
 function clearScreen() {
     let orig = ctx.fillStyle
-    ctx.fillStyle = "rgb(100,100,100)"
+    ctx.fillStyle = VOID_COLOR
     ctx.fillRect(ORIGIN.x, ORIGIN.y, SCREEN.width, SCREEN.height)
     ctx.fillStyle = orig
 }
 
 function clearNonScreen() {
     let orig = ctx.fillStyle
-    ctx.fillStyle = BACKGROUND_COLOR
+    ctx.fillStyle = VOID_COLOR
     ctx.fillRect(0, 0, ORIGIN.x, canvas.height)
     ctx.fillRect(0, 0, canvas.width, ORIGIN.y)
     ctx.fillRect(0, SCREEN.height + Math.floor((canvas.height - SCREEN.height) / 2), canvas.width, ORIGIN.y)
@@ -1734,39 +1788,49 @@ function rowRangePortal(row, fstCol, scnCol, world, spawn) {
     return portal
 }
 
+function checkFrontier(map, obj, row, col, dir) {
+    var frontier = obj.getFrontier(dir)
+    var v = true
+    console.log(`frontier = ${frontier} type=${typeof frontier}`)
+    frontier.forEach(function(coord) {
+	let r = coord[0]
+	let c = coord[1]
+	console.log(`frontier r,c=${r},${c}`)
+	if (map.hasObstacleAt(r, c) || map.hasObjectTouching(r, c)) v = false
+    })
+    // console.log(`is obstacle or object on frontier? = ${v}`)
+    return v
+}
+
 
 
 // ignores possibility of pushingn an object that touches a movable obj, cuz i don't plan on this happening
 function canFrameShift(map, row, col, dir) {
-    console.log(`r,c=${row},${col} dir=${dir}`)
+   // console.log(`r,c=${row},${col} dir=${dir}`)
     if (row < 0 || col < 0 || row >= map.rows || col >= map.cols) {
 //	console.log("can't shift: off the world")
 	return false
     }
     if (!map.hasObstacleAt(row, col)) {
-	console.log("the map has no obstacle at row, col")
+	//console.log("the map has no obstacle at row, col")
 	if (map.hasObjectTouching(row, col)) {
-	    console.log("there's an obj touching row, col")
+	   // console.log("there's an obj touching row, col")
 	    var obj = map.getObjectTouching(row, col)
 	    if (obj.isMoving === false) {
-		console.log("the obj is not moving")
+	//	console.log("the obj is not moving")
 		return false
 	    }
-	    console.log("the object is moving")
-	    var frontier = obj.getFrontier(dir)
-	    var v = true
-	    console.log(`frontier = ${frontier} type=${typeof frontier}`)
-	    frontier.forEach(function(coord) {
-		let r = coord[0]
-		let c = coord[1]
-		console.log(`frontier r,c=${r},${c}`)
-		if (map.hasObstacleAt(r, c) || map.hasObjectTouching(r, c)) v = false
-	    })
-	   // console.log(`is obstacle or object on frontier? = ${v}`)
-	    return v
+	   // console.log("the object is moving")
+	    return checkFrontier(map, obj, row, col, dir)
 	}
 //	console.log("there is no obj touching")
-	return true //no obstacle, no obj
+	let v = true
+	map.objList.forEach(function(obj) {
+	    if (obj.isMoving) {
+		if (obj !== player && checkFrontier(map, obj, row, col, dir) == false) v = false
+	    }
+	})
+	return v //prevent sideways collision
     }
  //   console.log("there is obstacle at row col")
     
@@ -1869,7 +1933,8 @@ var mapPrototype = {
 	}
 	this.objList.forEach(function(obj) {
 	    if (delta ===  0 || !obj.isMoving) {
-		console.log("obj not moving- " + obj.row + " " + obj.col)
+		//console.log("obj not moving- " + obj.row + " " + obj.col)
+		//console.log(obj)
 		obj.draw(mapOrigin, obj.row, obj.col, delta, dir, 0)
 	    }
 	})
@@ -1886,7 +1951,7 @@ var mapPrototype = {
     hasObjectTouching: function(row, col) {
 	var v = false
 	this.objList.forEach(function(obj) {
-	    if (obj.contains(row, col)) v = true
+	    if (obj.contains(row, col) && obj !== player) v = true
 	})
 	return v
     },
@@ -2010,8 +2075,8 @@ function endMap() {
     map.objList = []
     map.portals = []
     map.triggers = []
-    map.map = mapFromTemplate(mapData.get("end").template, endCellMap)
-    map.portals.push(rowRangePortal(12,8,11, overworld, END_SPAWN))
+    map.map = mapFromTemplate(mapData.get("end").template, endCellMap, END_FLOOR_COLOR)
+    map.portals.push(rowRangePortal(13,8,11, overworld, END_SPAWN))
     return map
 }
 
@@ -2069,12 +2134,40 @@ function chartesMap() {
     let map = Object.create(mapPrototype)
     map.rows = 97
     map.cols = 52
-    map.spawns = [[95,26]]
+    map.spawns = [[11,36]]
     map.objList = []
     map.portals = []
     map.triggers = []
-    map.map = mapFromTemplate(mapData.get("france").template, franceCellMap)
+    map.map = mapFromTemplate(mapData.get("france").template, franceCellMap, FRANCE_FLOOR_COLOR, VOID_COLOR)
+    map.pan = fryingPan(9,13)
+    map.cup = teaCup(9,39)
+    map.ball = ball(4,26)
+    map.cross = crossObj(44,26)
+    map.objList.push(map.cross)
+    map.objList.push(map.cup)
+    map.objList.push(map.ball)
+    map.objList.push(map.pan)
     map.portals.push(rowPortal(96, overworld, FRANCE_SPAWN))
+
+    let victoryTrigger = {
+	isTriggered: function() {
+	    return ((map.pan.row == 45 && map.pan.col == 24) &&
+		    (map.cup.row == 45 && map.cup.col == 28) &&
+		    (map.ball.row == 43 && map.ball.col == 26) &&
+		    (map.pan.isMoving || map.cup.isMoving || map.ball.isMoving))
+	},
+	onTrigger: function(logic, callback) {
+	    questProgress.france = SOLVED
+	    map.objList = map.objList.filter(obj => obj !== map.cross)//kill cross
+	    this.overlay.registerLogic(logic)
+	    this.overlay.registerCallback(callback)
+	    this.overlay.step()
+	    console.log("finished step")
+	},
+	overlay: textOverlay(FRANCE_VICTORY_TEXT)
+    }
+    map.triggers.push(victoryTrigger)
+    
     return map
 }
 
@@ -2099,12 +2192,12 @@ function basilicaMap() {
     let map = Object.create(mapPrototype)
     map.rows = 67
     map.cols = 67
-    map.spawns = [[62,33]]
+    map.spawns = [[63,33]]
     map.objList = []
     map.portals = []
     map.triggers = []
-    map.map = mapFromTemplate(mapData.get("rome").template, romeCellMap)
-    map.portals.push(rowPortal(63, overworld, ROME_SPAWN))
+    map.map = mapFromTemplate(mapData.get("rome").template, romeCellMap, ROMAN_FLOOR_COLOR, VOID_COLOR)
+    map.portals.push(rowPortal(64, overworld, ROME_SPAWN))
     map.objList.push(basilicaCorner(24,25,[1,1]))
     map.objList.push(basilicaCorner(40,25,[1,-1]))
     map.objList.push(basilicaCorner(24,41,[-1,1]))
@@ -2112,8 +2205,8 @@ function basilicaMap() {
 
     var victoryTrigger = {
 	isTriggered: function() {
-	    console.log("is trigger being called")
-	    let v = false
+	    //console.log("is trigger being called"
+	    console.log(map.objList)
 	    if ((map.objList[0].row == 20 && map.objList[0].col == 21) &&
 		(map.objList[1].row == 44 && map.objList[1].col == 21) &&
 		(map.objList[2].row == 20 && map.objList[2].col == 45) &&
@@ -2286,7 +2379,7 @@ var universe = {
 
 function createUniverse() {
     registerEventListeners()
-    universe.activeWorld = overworld(MAIN_SPAWN)
+    universe.activeWorld = france(MAIN_SPAWN)
     universe.startGame()
 }
 
