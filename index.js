@@ -28,6 +28,16 @@ const IVORY = "#fffff0"
 const LIMESTONE = "rgb(246,248,220)"
 const GRANITE = "#4A5355"
 const BRONZE = "#88540b"
+const GREEN = "rgb(0,255,0)"
+const PURPLE = "rgb(148,0,211)"
+const DIRT_BROWN = "#573B0C"
+const DUNGEON_BRONZE = "#594f46"
+const LIGHT_GREEN = "rgb(152,251,152)"
+const DEEP_SKY_BLUE = "rgb(0,191,255)"
+const ROYAL_PURPLE = "#7851a9 "
+const ORANGE_YELLOW = "#ffae42"
+const IMPERIAL_RED = "#ED2939"
+const MAHOGANY = "#5B443E"
 
 const END_DARK_ALPHA = 0.5
 
@@ -58,20 +68,34 @@ const FRANCE_OFF_COLOR = SIENNA
 const EGYPT_FLOOR_COLOR = SANDY_YELLOW
 const EGYPT_WALL_COLOR = SANDY_BROWN
 const EGYPT_COL_COLOR = SANDY_BROWN
+const PHAROH_COLOR = BRONZE
 
 const END_FLOOR_COLOR = LIGHT_GREY
 const END_WALL_COLOR = SIENNA
+
+
+const OVERWORLD_WALL_COLOR = DUNGEON_BRONZE
+const OVERWORLD_FLOOR_COLOR = DIRT_BROWN
+const TORCH_SILVER = SILVER
+const TORCH_BROWN = SIENNA
+const GREEK_DOOR_COLOR = DEEP_SKY_BLUE
+const ROMAN_DOOR_COLOR = ROYAL_PURPLE
+const FRANCE_DOOR_COLOR = IMPERIAL_RED
+const EGYPT_DOOR_COLOR = ORANGE_YELLOW
+const FINAL_DOOR_COLOR = MAHOGANY
+const FINAL_DOOR_STROKE = SILVER
+const OPEN_DOOR_COLOR = IVORY
 
 
 
 
 const TEST_STRING = "hello, my name is joe, I want to tell you all about what I have been up to lately. I have to make way more filler text than I expected which is why none of this means anything unless you subscribe to iceberg theory where even if I'm not trying to inject any meaning, tunconscious event in my mind influence my writing in a such a way as to make my opinion about my work irrelevant"
 const TO_STRING = "You can't tell what's different, but the world is not the same as it just was...."
-const GREEK_VICTORY_TEXT = "You feel a rumbling deep in the earth. Something has important has happened somewhere, and you feel that your task here is complete."
-const ROMAN_VICTORY_TEXT = GREEK_VICTORY_TEXT
+const GREEK_VICTORY_TEXT = "You feel a rumbling deep in the earth. e, and you feel that your task here is complete."
+const ROMAN_VICTORY_TEXT = "You hear a loud click"
 const ROMAN_PROGRESS_TEXT = "oH,that hit the spot"
 const FRANCE_VICTORY_TEXT = "You dissoled the facade!"
-const EGYPT_VICTORY_TEXT = "Who are you who can walk through walls that aren't there? Surely no mere door could stop you..."
+const EGYPT_VICTORY_TEXT = "An old clay tablet, with something written on it... \"Who are you who can walk through walls that aren't there? Surely no mere door could stop you. \""
 
 
 
@@ -159,7 +183,6 @@ const questProgress = {
 }
 
 function totalVictory() {
-    return true
     return (questProgress.greece == SOLVED &&
 	    questProgress.rome == SOLVED &&
 	    questProgress.france == SOLVED &&
@@ -638,32 +661,57 @@ function greekFloorCell() {
 
 /////////////////////////
 
-function greekDoor() {
+function normalDoor(color) {
     let cell = Object.create(drawable)
     cell.drawImg = function(x, y, alpha) {
-	drawGenRect(x, y, CELL_SIZE * 3, CELL_SIZE * 3, SILVER)
+	drawGenRect(x, y, 3 * CELL_SIZE, 3 * CELL_SIZE, OVERWORLD_WALL_COLOR)
+	drawCircle(x + CELL_SIZE + HALF_CELL, y + CELL_SIZE + HALF_CELL, CELL_SIZE + HALF_CELL, color)
+	drawGenRect(x, y + CELL_SIZE + HALF_CELL, 3 * CELL_SIZE, 2 * CELL_SIZE, color)
     }
     cell.isObstacle = false
     cell.isLink = true
     return cell
 }
 
+function greekDoor() {
+    return normalDoor(GREEK_DOOR_COLOR)
+}
+
 function romeDoor() {
-    return greekDoor()
+    return normalDoor(ROMAN_DOOR_COLOR)
 }
 
 function franceDoor() {
-    return greekDoor()
+    return normalDoor(FRANCE_DOOR_COLOR)
 }
 
 function egyptDoor() {
-    return greekDoor()
+    return normalDoor(EGYPT_DOOR_COLOR)
 }
 
 function finalDoor() {
     let cell = Object.create(drawable)
     cell.drawImg = function(x, y, alpha) {
-	drawGenRect(x, y, CELL_SIZE * 4, CELL_SIZE * 6, SILVER)
+	drawGenRect(x, y, CELL_SIZE * 4, CELL_SIZE * 6, OVERWORLD_WALL_COLOR)
+	drawCircle(x + 2 * CELL_SIZE, y + CELL_SIZE * 2, 2 * CELL_SIZE, FINAL_DOOR_COLOR)
+	drawGenRect(x, y + 2 * CELL_SIZE, 4 * CELL_SIZE, 4 * CELL_SIZE, FINAL_DOOR_COLOR)
+	drawTorch(x, y + 2 * CELL_SIZE,
+		  (questProgress.greece == SOLVED) ? GREEK_DOOR_COLOR: FINAL_DOOR_COLOR,
+		  (questProgress.greece == SOLVED) ? ORANGE: FINAL_DOOR_COLOR)
+	drawTorch(x, y + 4 * CELL_SIZE,
+		  (questProgress.rome == SOLVED) ? ROMAN_DOOR_COLOR: FINAL_DOOR_COLOR,
+		  (questProgress.rome == SOLVED) ? ORANGE : FINAL_DOOR_COLOR)
+	drawTorch(x + 2 * CELL_SIZE, y + 2 * CELL_SIZE,
+		  (questProgress.france == SOLVED) ? FRANCE_DOOR_COLOR: FINAL_DOOR_COLOR,
+		 (questProgress.france == SOLVED) ? ORANGE: FINAL_DOOR_COLOR)
+	drawTorch(x + 2 * CELL_SIZE, y + 4 * CELL_SIZE,
+		  (questProgress.egypt == SOLVED) ? EGYPT_DOOR_COLOR: FINAL_DOOR_COLOR,
+		  (questProgress.egypt == SOLVED) ? ORANGE: FINAL_DOOR_COLOR)
+	if(totalVictory()) {
+	    drawCircle(x + 2 * CELL_SIZE, y + CELL_SIZE * 2, 2 * CELL_SIZE, OPEN_DOOR_COLOR)
+	    drawGenRect(x, y + 2 * CELL_SIZE, 4 * CELL_SIZE, 4 * CELL_SIZE, OPEN_DOOR_COLOR)
+	}
+	
     }
     cell.isObstacle = true
     cell.isLink = true
@@ -673,7 +721,9 @@ function finalDoor() {
 function secretDoor() {
     let cell = Object.create(drawable)
     cell.drawImg = function(x, y, alpha) {
-	drawGenRect(x, y, CELL_SIZE * 2, CELL_SIZE * 2, SILVER)
+	drawGenRect(x, y, CELL_SIZE * 2, CELL_SIZE * 2, OVERWORLD_WALL_COLOR)
+	drawCircle(x + CELL_SIZE, y + CELL_SIZE, CELL_SIZE, FINAL_DOOR_COLOR)
+	drawGenRect(x, y + CELL_SIZE, 2 * CELL_SIZE, CELL_SIZE, FINAL_DOOR_COLOR)
     }
     cell.isObstacle = true
     cell.isLink = true
@@ -683,7 +733,7 @@ function secretDoor() {
 function overworldTopWall() {
     let cell = Object.create(drawable)
     cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, SIENNA)
+	drawRect(x, y, OVERWORLD_WALL_COLOR)
     }
     cell.isObstacle = true
     return cell
@@ -715,26 +765,27 @@ function blankNonObstacle() {
     return cell
 }
 
+
+
 function torch() {
     let cell = Object.create(drawable)
     cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, RED)
+	drawGenRect(x, y, 2 * CELL_SIZE, 2 * CELL_SIZE, OVERWORLD_WALL_COLOR)
+	drawTorch(x, y, RED, ORANGE)
     }
     cell.isObstacle = true
+    cell.isLink = true
     return cell
 }
 
-function specialTorch() {
-    let cell = Object.create(drawable)
-    cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, ORANGE)
-    }
-    cell.isObstacle = true
-    return cell
-}
 
 function overworldFloor() {
-    return greekFloorCell()
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, OVERWORLD_FLOOR_COLOR)
+    }
+    cell.isObstacle = false
+    return cell
 }
 
 //////////////////////////////////////////
@@ -1068,7 +1119,9 @@ function egyptSmallCol() {
 function egyptPharoh() {
     let cell = Object.create(drawable)
     cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, ORANGE)
+	drawRect(x, y, EGYPT_FLOOR_COLOR)
+	drawCircle(x + HALF_CELL, y + HALF_CELL, HALF_CELL, PHAROH_COLOR)
+	drawGenRect(x, y + HALF_CELL, CELL_SIZE, HALF_CELL, PHAROH_COLOR)
     }
     cell.isObstacle = true
     return cell
@@ -1123,7 +1176,9 @@ function endLightWall() {
 function endTorch() {
     let cell = Object.create(drawable)
     cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, ORANGE)
+	drawGenRect(x, y, 2 * CELL_SIZE, 2 * CELL_SIZE, END_WALL_COLOR)
+	drawTorch(x, y, GREEN, BLACK)
+	
     }
     cell.isObstacle = true
     cell.isLink = true
@@ -1133,7 +1188,10 @@ function endTorch() {
 function endSage() {
     let cell = Object.create(drawable)
     cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, ORANGE)
+	let img = document.getElementById("sage")
+	drawGenRect(x, y, 2 * CELL_SIZE, 2 * CELL_SIZE, END_FLOOR_COLOR)
+	ctx.drawImage(img, x, y, 2 * CELL_SIZE, 2 * CELL_SIZE)/*,
+		      x + 2 * CELL_SIZE, y + 2 * CELL_SIZE, 2 * CELL_SIZE, 2 * CELL_SIZE)*/
     }
     cell.isObstacle = true
     cell.isLink = true
@@ -1210,51 +1268,13 @@ function crossObj(row, col) {
     return cross
 }
 
-function fryingPan(row, col) {
-    let pan = Object.create(drawable)
-    pan.drawImg = function(x, y, alpha) {
-	drawRect(x, y, FRANCE_FLOOR_COLOR)
-	turtle.x = x
-	turtle.y = y
-	
-    }
-    pan.isMoving = false
-    pan.contains = pan.singleCellContains
-    pan.getFrontier = pan.getSingleCellFrontier
-    pan.row = row
-    pan.col = col
-    return pan
-}
-
-function teaCup(row, col) {
-    let cup = Object.create(drawable)
-    cup.drawImg = function(x, y, alpha) {
-	drawRect(x, y, FRANCE_FLOOR_COLOR)
-	turtle.x = x
-	turtle.y = y
-	turtle.beginPath()
-	let unit = Math.floor(CELL_SIZE / 20)
-	turtle.moveTo([unit,unit])
-	turtle.lineTo([0,unit * 12])
-	turtle.arcTo([10 * unit,0], 12 * unit, false)
-	turtle.lineTo([0,-3 * unit])
-	turtle.arcTo([0, -6 * unit], 3 * unit, false)
 
 
-	turtle.fill(ORANGE)
-    }
-    cup.isMoving = false
-    cup.contains = cup.singleCellContains
-    cup.getFrontier = cup.getSingleCellFrontier
-    cup.row = row
-    cup.col = col
-    return cup
-}
-
-function ball(row, col) {
+function ball(row, col, color) {
     let ball = Object.create(drawable)
     ball.drawImg = function(x, y, alpha) {
-	drawRect(x, y, SIENNA)
+	drawRect(x, y, FRANCE_FLOOR_COLOR)
+	drawCircle(x + HALF_CELL, y + HALF_CELL, Math.floor(HALF_CELL * 3 / 4, color))
     }
     ball.isMoving = false
     ball.contains = ball.singleCellContains
@@ -1498,7 +1518,6 @@ overworldCellMap.set("10", overworldLeftWall)
 overworldCellMap.set("11", overworldFloor)
 overworldCellMap.set("12", overworldBotWall)
 overworldCellMap.set("13", torch)
-overworldCellMap.set("14", specialTorch)
 overworldCellMap.set("15", blankObstacle)
 
 const romeCellMap = new Map()
@@ -1639,6 +1658,13 @@ function drawCircle(x, y, r, color) {
     ctx.fillStyle = orig
 }
 
+function drawGradientCircle(x, y, r, fstC, scnC) {
+    let grd = ctx.createLinearGradient(x, y, x, y - r)
+    grd.addColorStop(0, fstC)
+    grd.addColorStop(1, scnC)
+    drawCircle(x, y, r, grd)
+}
+
 function drawGridRect(x, y, color) {
     orig = ctx.fillStyle
     ctx.fillStyle = "rgb(0,0,0)"
@@ -1650,6 +1676,21 @@ function drawGridRect(x, y, color) {
     ctx.font = "12px Georgia"
     ctx.fillText("(" + row + "," + col + ")",x + gap * 2, y + 5 * gap) */
     ctx.fillStyle = orig
+}
+
+function drawTorch(x, y, fstC, scnC) {
+    drawGradientCircle(x + CELL_SIZE, y + Math.floor(4 / 5 * CELL_SIZE), Math.floor(CELL_SIZE * 2 / 5), fstC, scnC)
+    drawGenRect(x + HALF_CELL, y + Math.floor(4 / 5 * CELL_SIZE), CELL_SIZE, Math.floor(CELL_SIZE / 5), TORCH_SILVER)
+    turtle.x = x
+    turtle.y = y
+    turtle.beginPath()
+    turtle.moveTo([Math.floor(CELL_SIZE * 3 / 4) + 6, CELL_SIZE]) //bullshit
+    turtle.lineTo([HALF_CELL, 0])
+    turtle.lineTo([-Math.floor(CELL_SIZE / 5), Math.floor(CELL_SIZE * 3 / 4)])
+    turtle.lineTo([-Math.floor(CELL_SIZE * 2 / 5), 0])
+    turtle.lineTo([-Math.floor(CELL_SIZE / 5), -Math.floor(CELL_SIZE * 3 / 4)])
+    turtle.closePath()
+    turtle.fill(TORCH_BROWN)
 }
 
 // code borrowed from https://www.html5canvastutorials.com/tutorials/html5-canvas-wrap-text-tutorial/
@@ -2101,7 +2142,7 @@ function edfuMap() {
     let map = Object.create(mapPrototype)
     map.rows = 109
     map.cols = 65
-    map.spawns = [[107,32]]
+    map.spawns = [[12,32]]
     map.objList = []
     map.portals = []
     map.triggers = []
@@ -2139,22 +2180,22 @@ function chartesMap() {
     map.portals = []
     map.triggers = []
     map.map = mapFromTemplate(mapData.get("france").template, franceCellMap, FRANCE_FLOOR_COLOR, VOID_COLOR)
-    map.pan = fryingPan(9,13)
-    map.cup = teaCup(9,39)
-    map.ball = ball(4,26)
+    map.ball1 = ball(9,13, BLUE)
+    map.ball2 = ball(9,39, RED)
+    map.ball3 = ball(4,26, GREEN)
     map.cross = crossObj(44,26)
     map.objList.push(map.cross)
-    map.objList.push(map.cup)
-    map.objList.push(map.ball)
-    map.objList.push(map.pan)
+    map.objList.push(map.ball1)
+    map.objList.push(map.ball2)
+    map.objList.push(map.ball3)
     map.portals.push(rowPortal(96, overworld, FRANCE_SPAWN))
 
     let victoryTrigger = {
 	isTriggered: function() {
-	    return ((map.pan.row == 45 && map.pan.col == 24) &&
-		    (map.cup.row == 45 && map.cup.col == 28) &&
-		    (map.ball.row == 43 && map.ball.col == 26) &&
-		    (map.pan.isMoving || map.cup.isMoving || map.ball.isMoving))
+	    return ((map.ball1.row == 45 && map.ball1.col == 24) &&
+		    (map.ball2.row == 45 && map.ball2.col == 28) &&
+		    (map.ball3.row == 43 && map.ball3.col == 26) &&
+		    (map.ball1.isMoving || map.ball2.isMoving || map.ball3.isMoving))
 	},
 	onTrigger: function(logic, callback) {
 	    questProgress.france = SOLVED
@@ -2324,7 +2365,7 @@ function overworldMap() {
     let map = Object.create(mapPrototype)
     map.rows = 17
     map.cols = 26 * 4
-    map.spawns = [[7,66],
+    map.spawns = [[7,90],
 		  [7,13],
 		  [7,26],
 		  [7,39],
@@ -2379,7 +2420,7 @@ var universe = {
 
 function createUniverse() {
     registerEventListeners()
-    universe.activeWorld = france(MAIN_SPAWN)
+    universe.activeWorld = egypt(MAIN_SPAWN)
     universe.startGame()
 }
 
@@ -2390,26 +2431,32 @@ function createUniverse() {
 var ajaxCompleted = 0
 var ajaxMax = 5 //wtf why don't work?
 
+window.mobilecheck = function() {
+  var check = false;
+  (function(a){if(/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(a)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0,4))) check = true;})(navigator.userAgent||navigator.vendor||window.opera);
+  return check;
+};
 
-for (const name of mapData.keys()) {
-    var req = new XMLHttpRequest()
-    req.addEventListener("load", function() {
-	let obj = JSON.parse(this.responseText)
+if (window.mobilecheck()) {
+
+}
+else {
+
+    for (const name of mapData.keys()) {
+	var req = new XMLHttpRequest()
+	req.addEventListener("load", function() {
+	    let obj = JSON.parse(this.responseText)
 //	console.log(obj)
-	mapData.get(name).template = obj
-	ajaxCompleted ++
-	if (ajaxCompleted >= ajaxMax) {
-	    createUniverse()
-	}
-    })
-    req.open("GET", mapData.get(name).path)
-    req.send()
+	    mapData.get(name).template = obj
+	    ajaxCompleted ++
+	    if (ajaxCompleted >= ajaxMax) {
+		createUniverse()
+	    }
+	})
+	req.open("GET", mapData.get(name).path)
+	req.send()
+    }
 }
 
 
-/*clearCanvas()
-clearScreen()
-let pnt = wrappedTextbox(TEST_STRING)
-console.log(TEST_STRING.slice(pnt, TEST_STRING.length))
-*/
 
