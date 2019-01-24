@@ -99,8 +99,8 @@ const TO_STRING = "You can't tell what's different, but the world is not the sam
 
 const GREEK_VICTORY_TEXT = "You feel a slight breeze. Somewhere far away, a bird sings. Your work here is done."
 const ROMAN_VICTORY_TEXT = "A loud hiss echos through the chamber. Order has been restored, and your work here is done."
-const FRANCE_VICTORY_TEXT = "Aha! As the last one cicks into place, the unholy mirage begins to fade. Your work here is done."
-const EGYPT_VICTORY_TEXT = "An old clay tablet, with something written on it... \"Who are you who can walk through walls? Surely no mere door could stop you. \""
+const FRANCE_VICTORY_TEXT = "Aha! As the last one clicks into place, the unholy mirage begins to fade. Your work here is done."
+const EGYPT_VICTORY_TEXT = "An old clay tablet, with something written on it... \n \"Who are you who can walk through walls? Surely no mere door could stop you. \""
 const DEFAULT_OVERLAY_TEXT = "You squint with scrutiny, but find nothing of interest..."
 
 
@@ -2205,7 +2205,7 @@ function endMap() {
     map.triggers = []
     map.map = mapFromTemplate(mapData.get("end").template, endCellMap, END_FLOOR_COLOR)
     map.portals.push(rowRangePortal(13,8,11, overworld, END_SPAWN))
-    let overlay = textOverlay("Oh, well hello young champion. It seems you have a keen eye for detail. You have won a great victory from this forsaken place; there is nothing left for you here. I was told to give you this code, though I must admit I don't know what it's for. https://tinyurl.com/y8funcmj")
+    let overlay = textOverlay("Oh, well hello young champion. It seems you have a keen eye for detail. You have won a great victory from this forsaken place; there is nothing left for you here. I was told to give you this code, though I must admit I don't know what it's for... \n https://tinyurl.com/y8funcmj")
     map.map.get(5,9).overlay = overlay
     map.map.get(5,10).overlay = overlay
     map.map.get(6,10).overlay = overlay
