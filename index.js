@@ -2234,7 +2234,7 @@ function edfuMap() {
     let map = Object.create(mapPrototype)
     map.rows = 109
     map.cols = 65
-    map.spawns = [[12,32]]
+    map.spawns = [[107,32]]
     map.objList = []
     map.portals = []
     map.triggers = []
@@ -2267,7 +2267,7 @@ function chartesMap() {
     let map = Object.create(mapPrototype)
     map.rows = 97
     map.cols = 52
-    map.spawns = [[11,36]]
+    map.spawns = [[95,26]]
     map.objList = []
     map.portals = []
     map.triggers = []
@@ -2476,7 +2476,7 @@ function overworldMap() {
     let map = Object.create(mapPrototype)
     map.rows = 17
     map.cols = 26 * 4
-    map.spawns = [[7,100],
+    map.spawns = [[10,4],
 		  [7,13],
 		  [7,26],
 		  [7,39],
