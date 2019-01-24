@@ -4,7 +4,7 @@ if (typeof (canvas.getContext) !== undefined) {
 }
 
 canvas.height = Math.floor(document.documentElement.clientHeight)
-    canvas.width = Math.floor(document.documentElement.clientWidth)
+canvas.width = Math.floor(document.documentElement.clientWidth)
 
 /*
 canvas.height = Math.floor(window.innerHeight * 3 / 4)
@@ -101,7 +101,8 @@ const GREEK_VICTORY_TEXT = "You feel a slight breeze. Somewhere far away, a bird
 const ROMAN_VICTORY_TEXT = "A loud hiss echos through the chamber. Order has been restored, and your work here is done."
 const FRANCE_VICTORY_TEXT = "Aha! As the last one cicks into place, the unholy mirage begins to fade. Your work here is done."
 const EGYPT_VICTORY_TEXT = "An old clay tablet, with something written on it... \"Who are you who can walk through walls? Surely no mere door could stop you. \""
-//const SAGE_TEXT = "Oh, well hello young champion. You have a keen eye for detail. There is nothing left for you here. I was told to give you this code, though I must admit I don't know what it's for. https://tinyurl.com/y8funcmj"
+const DEFAULT_OVERLAY_TEXT = "You squint with scrutiny, but find nothing of interest..."
+
 
 
 
@@ -135,7 +136,7 @@ const EGYPT_SPAWN = 4
 const END_SPAWN = 5
 
 
-console.log(`can wh=${canvas.width},${canvas.height}, origing=${ORIGIN.x},${ORIGIN.y}`)
+//console.log(`can wh=${canvas.width},${canvas.height}, origing=${ORIGIN.x},${ORIGIN.y}`)
 
 //#####################################
 // ENUMS
@@ -284,7 +285,7 @@ function onKeyUp(event) {
 }
 
 function blockLogic(logic) {
-    console.log("blocking logic")
+    //// console.log("blocking logic")
 }
 
 
@@ -298,12 +299,12 @@ function blockLogic(logic) {
 /////////////////////////////////////////////////////
 var drawable = {
     draw: function(mapOrigin, row, col, delta, dir, alpha) {
-//	console.log(`draw: orig=${mapOrigin} rox,col = [${row},${col}] delta=${delta}`)
+//	// console.log(`draw: orig=${mapOrigin} rox,col = [${row},${col}] delta=${delta}`)
 	let relRow = row - mapOrigin[0]
 	let relCol = col - mapOrigin[1]
 	if (isInView(relRow, relCol, dir)) {
 	    let coord = gridToGlobal(relRow, relCol, delta, dir)
-	   // console.log(`coord = ${coord} relr,c=[${relRow},${relCol}]`)
+	   // // console.log(`coord = ${coord} relr,c=[${relRow},${relCol}]`)
 	    this.drawImg(coord[0], coord[1], alpha)
 	   // drawGridRect(coord[0], coord[1], relRow, relCol, "rgb(0,255,255)")//default
 	}
@@ -345,7 +346,7 @@ var player = Object.create(drawable, {
 	  writable: true},
     dir: {value: [0,1]},
     drawImg: {value:  function(x, y, alpha) {
-//	console.log("drawing Player x,y = " + x + ", " + y)
+//	// console.log("drawing Player x,y = " + x + ", " + y)
 	drawGridRect(x, y, "rgb(255,0,0)")
 
     }},
@@ -357,7 +358,7 @@ var player = Object.create(drawable, {
     getAdjCells: {value: function() {
 	var l = []
 	for (const dir of dirMap.values()) {
-	    //console.log(dir)
+	    //// console.log(dir)
 	    let coord = []
 	    coord.push(incRow(this.row, dir))
 	    coord.push(incCol(this.col, dir))
@@ -392,7 +393,7 @@ function textOverlay(text) {
     overlay.hasTrigger = false
     overlay.eventLogic = function(worldEvent) {
 	if (worldEvent === INSPECT) {
-	    console.log(overlay)
+	    // console.log(overlay)
 	    overlay.step()
 	}
 
@@ -421,6 +422,10 @@ function textOverlay(text) {
 	}	
     }
     return overlay    
+}
+
+function defaultOverlay() {
+    return textOverlay(DEFAULT_OVERLAY_TEXT)
 }
 
 function textOverlayVictoryTrigger(text, trigger) {
@@ -1255,7 +1260,7 @@ function crossObj(row, col) {
     cross.row = row
     cross.col = col
     cross.drawImg = function(x, y, alpha) {
-	console.log("drawing cross")
+	// console.log("drawing cross")
 	turtle.x = x
 	turtle.y = y
 	turtle.beginPath()
@@ -1418,8 +1423,8 @@ function basilicaCorner(row, col, dir) {
 		frontier.push([obj.row + delta[0], obj.col + delta[1]])
 	    }
 	}
-	console.log("frontier for basilica c")
-	console.log(frontier)
+	// console.log("frontier for basilica c")
+	// console.log(frontier)
 	return frontier
     }
     obj.getCells = function(r, c) { //rel row and col are passed
@@ -1464,8 +1469,8 @@ function codeToKey(code) {
 // allows for vanilla mapping, as well as linking blank cells to
 // "r.c.isObstacle" is the format for cells to be linked
 function mapFromTemplate(template, cellMap, innerLinkColor, outerLinkColor) {
-    // console.log(template)
-  //  console.log(cellMap)
+    // // console.log(template)
+  //  // console.log(cellMap)
     var linkMap = new Map()
     var cellsToLink = []
     let rows = template.length
@@ -1482,13 +1487,13 @@ function mapFromTemplate(template, cellMap, innerLinkColor, outerLinkColor) {
 		})
 	    }
 	    else {
-	//	console.log(code)
+	//	// console.log(code)
 		let cell = cellMap.get(code)()
-	//	console.log(cell)
+	//	// console.log(cell)
 		if (cell.isLink) {
-		  //  console.log("is a link")
-		    //console.log(`r.c=${row},${col}`)
-		    //console.log(cell)
+		  //  // console.log("is a link")
+		    //// console.log(`r.c=${row},${col}`)
+		    //// console.log(cell)
 		    let str = row + "." + col
 		    linkMap.set(str, {
 			hasBeenDrawn: false,
@@ -1511,8 +1516,8 @@ function mapFromTemplate(template, cellMap, innerLinkColor, outerLinkColor) {
 	    return [newX, newY]
 	}
 	let link = linkMap.get(codeToKey(cellObj.code))
-	console.log(`code=${cellObj.code}`)
-		console.log(link)
+	// console.log(`code=${cellObj.code}`)
+		// console.log(link)
 	let color = (data[3] == "true") ? outerLinkColor : innerLinkColor
 	let cell = linkedCell(link, transform, data[2] === "true", color)
 	map.add(cellObj.row, cellObj.col, cell) 
@@ -1608,7 +1613,7 @@ endCellMap.set("6", endLightWall)
 //if pre of post dir row/col is inside the screen, you will be drawn
 function isInView(preRow, preCol, dir) {
    
-   // console.log("preR,C = " + preRow + ", " + preCol)
+   // // console.log("preR,C = " + preRow + ", " + preCol)
     var postRow = drawIncRow(preRow, dir)
     var postCol = drawIncCol(preCol, dir)
     var maxR = Math.floor(SCREEN.height / CELL_SIZE)
@@ -1618,11 +1623,11 @@ function isInView(preRow, preCol, dir) {
 	((preCol < 0) && (postCol < 0)) ||
 	((preCol >= maxC) && (postCol >= maxC))
        ) {
-//	console.log("isInView = false")
+//	// console.log("isInView = false")
 	return false
     }
     else {
-//	console.log("isInView = true")
+//	// console.log("isInView = true")
 	return true
     }
 }
@@ -1631,16 +1636,16 @@ function isInView(preRow, preCol, dir) {
 //return [x,y]
 // good for static or animation (via delta)
 function gridToGlobal(row, col, delta, dir) {
-    /*console.log(`r,c=[${row},${col}], delta=${delta}, dir=${dir}`)
-    console.log(`${delta * dir[0] * CELL_SIZE}`)
-    console.log(`${delta * dir[1] * CELL_SIZE}`)
-    console.log(typeof row)
-    console.log(typeof col)
-    console.log(typeof delta)
-    console.log(typeof dir)*/
+    /*// console.log(`r,c=[${row},${col}], delta=${delta}, dir=${dir}`)
+    // console.log(`${delta * dir[0] * CELL_SIZE}`)
+    // console.log(`${delta * dir[1] * CELL_SIZE}`)
+    // console.log(typeof row)
+    // console.log(typeof col)
+    // console.log(typeof delta)
+    // console.log(typeof dir)*/
     var x = ORIGIN.x - Math.floor(delta * dir[0] * CELL_SIZE) + col * CELL_SIZE
     var y = ORIGIN.y - Math.floor(delta * dir[1] * CELL_SIZE) + row * CELL_SIZE
-   // console.log(`x,y=${x},${y}`)
+   // // console.log(`x,y=${x},${y}`)
     return [x,y]
 }
 
@@ -1661,7 +1666,7 @@ function darkenRect(x, y, alpha) {
     let orig = ctx.fillStyle
     let st = "rgba(0,0,0," + alpha.toString() + ")"
     ctx.fillStyle = st
-   // console.log(`slpha=${alpha}, style=${ctx.fillStyle}, st=${st}`)
+   // // console.log(`slpha=${alpha}, style=${ctx.fillStyle}, st=${st}`)
     ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE)
     ctx.fillStyle = orig
 }
@@ -1728,28 +1733,39 @@ function drawTorch(x, y, fstC, scnC) {
 // Make a wrap text within the constraints of the box
 // If you have to stop, return point in string, else return -1
 function wrapText(text, x, y, maxWidth, lineHeight, maxHeight) {
- //   console.log(`text=${text} x,y=${x},${y} mxW/H = ${maxWidth},${maxHeight}`)
+ //   // console.log(`text=${text} x,y=${x},${y} mxW/H = ${maxWidth},${maxHeight}`)
     var words = text.split(' ');
     var line = "";
     var pnt = 0;
     for(var n = 0; n < words.length; n++) {
-        var testLine = line + words[n] + ' ';
-        var metrics = ctx.measureText(testLine);
-        var testWidth = metrics.width;
-//	console.log(testWidth)
-        if (testWidth > maxWidth && n > 0) {
-	   // console.log(line)
+	if (words[n] === "\n") {
 	    ctx.fillText(line, x, y);
-	    pnt += line.length
-	    line = words[n] + ' ';
+	    pnt += line.length + 2
+	    line = ""
 	    y += lineHeight;
 	    if (y > maxHeight) {
 		return pnt
 	    }
 	}
-        else {
-	    line = testLine;
-        }
+	else {
+            var testLine = line + words[n] + ' ';
+            var metrics = ctx.measureText(testLine);
+            var testWidth = metrics.width;
+//	// console.log(testWidth)
+            if (testWidth > maxWidth && n > 0) {
+	   // // console.log(line)
+		ctx.fillText(line, x, y);
+		pnt += line.length
+		line = words[n] + ' ';
+		y += lineHeight;
+		if (y > maxHeight) {
+		    return pnt
+		}
+	    }
+            else {
+		line = testLine;
+            }
+	}
     }
     ctx.fillText(line, x, y);
     return TEXT_FINISHED
@@ -1770,12 +1786,33 @@ function wrappedTextbox(text) {
     ctx.fillRect(x + bd, y + bd, SCREEN.width - 2 * bd, Math.floor(SCREEN.height / 4) - 2 * bd)
     ctx.fillStyle = TEXT_COLOR
     ctx.font = TEXT_FONT
-    console.log(ctx.font)
+    // console.log(ctx.font)
     let pnt = wrapText(text, x + txtMargin, y + txtMargin + 10, maxWidth, lineHeight, maxHeight)
     ctx.fillStyle = orig
-    console.log(pnt)
-    return pnt
-    
+    // console.log(pnt)
+    return pnt 
+}
+
+function helperWrapTextBox(text) {
+    let x = ORIGIN.x
+    let y = ORIGIN.y + Math.floor(SCREEN.height) + 30
+    let txtMargin = 20
+    let bd = 5
+    let maxWidth = 600
+    let lineHeight = 30
+    let maxHeight = lineHeight * 2 - 10
+    let orig = ctx.fillStyle
+    ctx.fillStyle = TEXT_BORDER_COLOR
+    ctx.fillRect(x, y, SCREEN.width, maxHeight)
+    ctx.fillStyle = TEXT_BACKGROUND_COLOR
+    ctx.fillRect(x + bd, y + bd, SCREEN.width - 2 * bd, maxHeight - 2 * bd)
+    ctx.fillStyle = TEXT_COLOR
+    ctx.font = TEXT_FONT
+    // console.log(ctx.font)
+    let pnt = wrapText(text, x + txtMargin, y + txtMargin + 10, maxWidth, lineHeight, maxHeight)
+    ctx.fillStyle = orig
+    // console.log(pnt)
+    return pnt 
 }
 
 function clearCanvas() {
@@ -1800,6 +1837,10 @@ function clearNonScreen() {
     ctx.fillRect(0, SCREEN.height + Math.floor((canvas.height - SCREEN.height) / 2), canvas.width, ORIGIN.y)
     ctx.fillRect(SCREEN.width + Math.floor((canvas.width - SCREEN.width) / 2), 0, ORIGIN.x, canvas.height)
     ctx.fillStyle = orig
+}
+
+function displayHelperText() {
+    helperWrapTextBox("               press \'g\' to grab                    press \'i\' to inspect")
 }
 
 function incRow(row, dir) {
@@ -1866,14 +1907,14 @@ function rowRangePortal(row, fstCol, scnCol, world, spawn) {
 function checkFrontier(map, obj, row, col, dir) {
     var frontier = obj.getFrontier(dir)
     var v = true
-  //  console.log(`frontier = ${frontier} type=${typeof frontier}`)
+  //  // console.log(`frontier = ${frontier} type=${typeof frontier}`)
     frontier.forEach(function(coord) {
 	let r = coord[0]
 	let c = coord[1]
-	//console.log(`frontier r,c=${r},${c}`)
+	//// console.log(`frontier r,c=${r},${c}`)
 	if (map.hasObstacleAt(r, c) || map.hasObjectTouching(r, c)) v = false
     })
-    // console.log(`is obstacle or object on frontier? = ${v}`)
+    // // console.log(`is obstacle or object on frontier? = ${v}`)
     return v
 }
 
@@ -1881,24 +1922,24 @@ function checkFrontier(map, obj, row, col, dir) {
 
 // ignores possibility of pushingn an object that touches a movable obj, cuz i don't plan on this happening
 function canFrameShift(map, row, col, dir) {
-   // console.log(`r,c=${row},${col} dir=${dir}`)
+   // // console.log(`r,c=${row},${col} dir=${dir}`)
     if (row < 0 || col < 0 || row >= map.rows || col >= map.cols) {
-//	console.log("can't shift: off the world")
+//	// console.log("can't shift: off the world")
 	return false
     }
     if (!map.hasObstacleAt(row, col)) {
-	//console.log("the map has no obstacle at row, col")
+	//// console.log("the map has no obstacle at row, col")
 	if (map.hasObjectTouching(row, col)) {
-	   // console.log("there's an obj touching row, col")
+	   // // console.log("there's an obj touching row, col")
 	    var obj = map.getObjectTouching(row, col)
 	    if (obj.isMoving === false) {
-	//	console.log("the obj is not moving")
+	//	// console.log("the obj is not moving")
 		return false
 	    }
-	   // console.log("the object is moving")
+	   // // console.log("the object is moving")
 	    return checkFrontier(map, obj, row, col, dir)
 	}
-//	console.log("there is no obj touching")
+//	// console.log("there is no obj touching")
 	let v = true
 	map.objList.forEach(function(obj) {
 	    if (obj.isMoving) {
@@ -1907,7 +1948,7 @@ function canFrameShift(map, row, col, dir) {
 	})
 	return v //prevent sideways collision
     }
- //   console.log("there is obstacle at row col")
+ //   // console.log("there is obstacle at row col")
     
     return false //is obstacle
 }
@@ -1926,30 +1967,31 @@ function Array2d(rows, cols) {
 
 
 function frameShift(map, mapOrigin, dir, movingObjects, world) {
-   // console.log("in frameshift")
-   // console.log(world)
+   // // console.log("in frameshift")
+   // // console.log(world)
     var prevLogic = keyData.logic
     keyData.logic = blockLogic
     var startTime = new Date()
-  //  console.log("startTime = " + startTime.getTime())
+  //  // console.log("startTime = " + startTime.getTime())
     function animate() {
 	let curTime = new Date()
 	let delta = (curTime.getTime() - startTime.getTime()) / SHIFT_TIME
-	//	console.log("curTime = " + curTime.getTime())
+	//	// console.log("curTime = " + curTime.getTime())
 	clearScreen()
 	map.draw(mapOrigin, delta, dir, [])
 	movingObjects.forEach(function(obj) {
-	   // console.log(obj)
+	   // // console.log(obj)
 	    obj.draw(mapOrigin, obj.row, obj.col, 0, dir)
 	})
 	clearNonScreen()
+	displayHelperText()
 	if (curTime.getTime() - startTime.getTime() < SHIFT_TIME) {
 	    window.requestAnimationFrame(animate)
 	}
 	else {
 	    world.row = incRow(world.row, dir)
 	    world.col = incCol(world.col, dir)
-	    //console.log(movingObjects)
+	    //// console.log(movingObjects)
 	    movingObjects.forEach(function(obj) {
 		obj.row = incRow(obj.row, dir)
 		obj.col = incCol(obj.col, dir)
@@ -1986,10 +2028,10 @@ function frameShift(map, mapOrigin, dir, movingObjects, world) {
 }
 
 function swapActiveWorlds(world, spawn) {
-   // console.log("in world swap")
+   // // console.log("in world swap")
     keyData.logic = blockLogic
     universe.activeWorld = world(spawn)
-   // console.log(universe.activeWorld)
+   // // console.log(universe.activeWorld)
     universe.startGame()
 }
 
@@ -2010,8 +2052,8 @@ var mapPrototype = {
 	}
 	this.objList.forEach(function(obj) {
 	    if (delta ===  0 || !obj.isMoving) {
-		//console.log("obj not moving- " + obj.row + " " + obj.col)
-		//console.log(obj)
+		//// console.log("obj not moving- " + obj.row + " " + obj.col)
+		//// console.log(obj)
 		obj.draw(mapOrigin, obj.row, obj.col, delta, dir, 0)
 	    }
 	})
@@ -2022,7 +2064,7 @@ var mapPrototype = {
 	}
     },
     hasObstacleAt: function(row, col) {
-//	console.log(`r,c = ${row},${col}`)
+//	// console.log(`r,c = ${row},${col}`)
 	return this.map.get(row, col).isObstacle
     },
     hasObjectTouching: function(row, col) {
@@ -2047,17 +2089,17 @@ var worldPrototype = {
     light: null,
     player: player,
     centerOrigin: function(spawn) {
-//	console.log("spawn " + spawn)
-//	console.log(this)
-//	console.log(this.map)
-//	console.log(this.map.spawns)
+//	// console.log("spawn " + spawn)
+//	// console.log(this)
+//	// console.log(this.map)
+//	// console.log(this.map.spawns)
 	let playerRow = this.map.spawns[spawn][0]
 	let playerCol = this.map.spawns[spawn][1]
 	this.row = playerRow - CENTER_ROW
 	this.col = playerCol - CENTER_COL
 	player.row = playerRow
 	player.col = playerCol
-//	console.log(`r,c=${this.row},${this.col}, screen rc=${SCREEN.centerRow},${SCREEN.centerCol}`)
+//	// console.log(`r,c=${this.row},${this.col}, screen rc=${SCREEN.centerRow},${SCREEN.centerCol}`)
     },
     inspect: function() {
 	
@@ -2065,15 +2107,16 @@ var worldPrototype = {
     },
     draw: function () {
 	clearScreen()
-//	console.log("orig [" + this.row + ", " + this.col + "]")
+//	// console.log("orig [" + this.row + ", " + this.col + "]")
 	this.map.draw([this.row, this.col], 0, [0,0], [])
 	clearNonScreen()
+	displayHelperText()
     },
     isInPortal: function(row, col) {
 	var v = false
 	this.map.portals.forEach(function(portal) {
 	    if (portal.contains(row, col)) {
-	//	console.log("was in a portal")
+	//	// console.log("was in a portal")
 		v = true
 	    }
 	})
@@ -2082,7 +2125,7 @@ var worldPrototype = {
     useActivePortal: function(row, col) {
 	this.map.portals.forEach(function(portal) {
 	    if (portal.contains(row, col)) {
-	//	console.log("swaping")
+	//	// console.log("swaping")
 		swapActiveWorlds(portal.world, portal.spawn)
 	    }
 	})
@@ -2099,19 +2142,27 @@ var worldPrototype = {
 	else if (worldEvent === INSPECT) {
 	    let adj = player.getAdjCells()
 	    var realthis = this
+	    let wasOverlay = false
 	    adj.forEach(function(coord) {
 		let row = coord[0]
 		let col = coord[1]
-		//console.log(this)
-		//console.log(this.map)
+		//// console.log(this)
+		//// console.log(this.map)
 		let cell = realthis.map.map.get(row, col)
 		if (cell.overlay !== undefined) {
 		    let overlay =  cell.overlay
+		    wasOverlay = true
 		    overlay.registerLogic(realthis.eventLogic)
 		    overlay.registerCallback(realthis.overlayCallback)
 		    overlay.step()
 		}
-	    })	   // overWorld.draw()
+	    })
+	    if (!wasOverlay) {
+		let overlay = defaultOverlay()
+		overlay.registerLogic(realthis.eventLogic)
+		overlay.registerCallback(realthis.overlayCallback)
+		overlay.step()
+	    }
 	}
 	
 	if (worldEvent === GRAB) {
@@ -2136,9 +2187,9 @@ function isAnyObjOnCoord(objs, coord) {
     let retV = false
     let row = coord[0]
     let col = coord[1]
-  //  console.log("isany being called: coords=" + coord)
+  //  // console.log("isany being called: coords=" + coord)
     objs.forEach(function(obj) {
-//	console.log(`object r,c=${obj.row},${obj.col}`)
+//	// console.log(`object r,c=${obj.row},${obj.col}`)
 	if (obj.row === row && obj.col === col) retV = true
     })
     return retV
@@ -2191,7 +2242,7 @@ function edfuMap() {
     map.portals.push(rowPortal(108, overworld, EGYPT_SPAWN))
     map.map.get(7,32).overlay = textOverlayVictoryTrigger(EGYPT_VICTORY_TEXT,
 							  () => questProgress.egypt = SOLVED)
-    console.log(map.map.get(7,32).overlay)
+    // console.log(map.map.get(7,32).overlay)
     return map
 }
 
@@ -2254,7 +2305,7 @@ function chartesMap() {
 	    this.overlay.registerLogic(logic)
 	    this.overlay.registerCallback(callback)
 	    this.overlay.step()
-	    console.log("finished step")
+	    // console.log("finished step")
 	},
 	overlay: textOverlay(FRANCE_VICTORY_TEXT)
     }
@@ -2305,8 +2356,8 @@ function basilicaMap() {
 	
     var victoryTrigger = {
 	isTriggered: function() {
-	    //console.log("is trigger being called"
-	    console.log(map.objList)
+	    //// console.log("is trigger being called"
+	    // console.log(map.objList)
 	    if ((map.objList[0].row == 20 && map.objList[0].col == 21) &&
 		(map.objList[1].row == 44 && map.objList[1].col == 21) &&
 		(map.objList[2].row == 20 && map.objList[2].col == 45) &&
@@ -2361,7 +2412,7 @@ function parthenonMap() {
     map.portals = []
     map.triggers = []
    // map.portals.push(singleCellPortal(0,0,overWorld, SECRET_SPAWN))
-   // console.log(map.portals)
+   // // console.log(map.portals)
     map.map = mapFromTemplate(mapData.get("greece").template, greekCellMap)
     if (questProgress.greece === UNSOLVED) {
 	map.objList.push(smallColObj(8, 8))
@@ -2376,7 +2427,7 @@ function parthenonMap() {
     var victoryTrigger = {
 	winCoords: [[31,11],[31,15]],
 	isTriggered: function() {
-	    console.log("is trigger being called")
+	    // console.log("is trigger being called")
 	    var c1 = map.objList[0]
 	    var c2 = map.objList[1] //tkw
 	    if (isAnyObjOnCoord([c1,c2], this.winCoords[0]) &&
@@ -2418,13 +2469,14 @@ function greece(spawn) {
     
 }
 
+const FATHER_WILLIAM = "The door is locked tight, but you find a poem carved in the wood... \n \n \n \"You are old, Father William,\" the young man said, \n \"And your hair has become very white; \n And yet you incessantly stand on your head— \n Do you think, at your age, it is right?\" \n \"In my youth,\" Father William replied to his son, \n \"I feared it might injure the brain; \n But now that I'm perfectly sure I have none, \n Why, I do it again and again.\" \n \"You are old,\" said the youth, \"As I mentioned before, \n And have grown most uncommonly fat; \n Yet you turned a back-somersault in at the door— \n Pray, what is the reason of that?\" \n \"In my youth,\" said the sage, as he shook his grey locks, \n \"I kept all my limbs very supple \n By the use of this ointment—one shilling a box— \n Allow me to sell you a couple?\" \n \"You are old,\" said the youth, \"And your jaws are too weak \n For anything tougher than suet; \n Yet you finished the goose, with the bones and the beak— \n How on earth did you manage to do it?\" \n \"In my youth,\" said his father, \"I took to the law, \n And argued each case with my wife; \n And the muscular strength which it gave to my jaw, \n Has lasted the rest of my life.\" \n \"You are old,\" said the youth, \"one would hardly suppose \n That your eye was as steady as ever; \n Yet you balanced an eel on the end of your nose— \n What made you so awfully clever?\" \n \"I have answered three questions, and that is enough,\" \n Said his father; \"don't give yourself airs! \n Do you think I can listen all day to such stuff? \n Be off, or I'll kick you down stairs!\""
 
 
 function overworldMap() {
     let map = Object.create(mapPrototype)
     map.rows = 17
     map.cols = 26 * 4
-    map.spawns = [[10,6],
+    map.spawns = [[7,100],
 		  [7,13],
 		  [7,26],
 		  [7,39],
@@ -2447,8 +2499,8 @@ function overworldMap() {
 	map.map.get(6,67).isObstacle = false
 	map.map.get(6,68).isObstacle = false
     }
-    //map.map.get(4,5).overlay = textOverlay(TEST_STRING)
-  //  console.log(map.map)
+    map.map.get(6,99).overlay = textOverlay(FATHER_WILLIAM)
+    map.map.get(6,100).overlay = textOverlay(FATHER_WILLIAM)
     return map
 }
 	    
@@ -2496,7 +2548,7 @@ window.mobilecheck = function() {
   return check;
 };
 
-if (!window.mobilecheck()) {
+if (window.mobilecheck()) {
     document.getElementById("error").style.display ="block"
     document.getElementById("canvas").style.display = "none"
 }
@@ -2507,7 +2559,7 @@ else {
 	var req = new XMLHttpRequest()
 	req.addEventListener("load", function() {
 	    let obj = JSON.parse(this.responseText)
-//	console.log(obj)
+//	// console.log(obj)
 	    mapData.get(name).template = obj
 	    ajaxCompleted ++
 	    if (ajaxCompleted >= ajaxMax) {
