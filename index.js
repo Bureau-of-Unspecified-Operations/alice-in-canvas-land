@@ -2496,9 +2496,9 @@ window.mobilecheck = function() {
   return check;
 };
 
-if (window.mobilecheck()) {
-    document.getElementById("error").style.display = block
-    document.getElementById("canvas").style.display = none
+if (!window.mobilecheck()) {
+    document.getElementById("error").style.display ="block"
+    document.getElementById("canvas").style.display = "none"
 }
 else {
     
