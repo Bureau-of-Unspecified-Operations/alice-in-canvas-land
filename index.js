@@ -3,9 +3,13 @@ if (typeof (canvas.getContext) !== undefined) {
     ctx = canvas.getContext("2d")
 }
 
-canvas.height = Math.floor(window.innerHeight / 4 * 3)
-canvas.width = Math.floor(window.innerWidth / 4 * 3)
+canvas.height = Math.floor(document.documentElement.clientHeight)
+    canvas.width = Math.floor(document.documentElement.clientWidth)
 
+/*
+canvas.height = Math.floor(window.innerHeight * 3 / 4)
+canvas.width = Math.floor(window.innerWidth * 3 / 4)
+*/
 
 //###########################################################################################################
 // GLOBALS GLOBALS GLOBALS GLOBALS
@@ -46,7 +50,8 @@ const VOID_COLOR = BLACK
 const PORTAL_COLOR = SILVER
 const PORTAL_FADE_COLOR = BLACK
 
-const TEXT_BACKGROUND_COLOR = "rgb(222,184,135)"
+const TEXT_BACKGROUND_COLOR = IVORY// "rgb(222,184,135)"
+const TEXT_BORDER_COLOR = LIGHT_GREY
 const TEXT_FONT = "20px Arial"
 const TEXT_COLOR = "rgb(0,0,0)"
 
@@ -71,7 +76,7 @@ const EGYPT_COL_COLOR = SANDY_BROWN
 const PHAROH_COLOR = BRONZE
 
 const END_FLOOR_COLOR = LIGHT_GREY
-const END_WALL_COLOR = SIENNA
+const END_WALL_COLOR = BRONZE
 
 
 const OVERWORLD_WALL_COLOR = DUNGEON_BRONZE
@@ -91,11 +96,13 @@ const OPEN_DOOR_COLOR = IVORY
 
 const TEST_STRING = "hello, my name is joe, I want to tell you all about what I have been up to lately. I have to make way more filler text than I expected which is why none of this means anything unless you subscribe to iceberg theory where even if I'm not trying to inject any meaning, tunconscious event in my mind influence my writing in a such a way as to make my opinion about my work irrelevant"
 const TO_STRING = "You can't tell what's different, but the world is not the same as it just was...."
-const GREEK_VICTORY_TEXT = "You feel a rumbling deep in the earth. e, and you feel that your task here is complete."
-const ROMAN_VICTORY_TEXT = "You hear a loud click"
-const ROMAN_PROGRESS_TEXT = "oH,that hit the spot"
-const FRANCE_VICTORY_TEXT = "You dissoled the facade!"
-const EGYPT_VICTORY_TEXT = "An old clay tablet, with something written on it... \"Who are you who can walk through walls that aren't there? Surely no mere door could stop you. \""
+
+const GREEK_VICTORY_TEXT = "You feel a slight breeze. Somewhere far away, a bird sings. Your work here is done."
+const ROMAN_VICTORY_TEXT = "A loud hiss echos through the chamber. Order has been restored, and your work here is done."
+const FRANCE_VICTORY_TEXT = "Aha! As the last one cicks into place, the unholy mirage begins to fade. Your work here is done."
+const EGYPT_VICTORY_TEXT = "An old clay tablet, with something written on it... \"Who are you who can walk through walls? Surely no mere door could stop you. \""
+//const SAGE_TEXT = "Oh, well hello young champion. You have a keen eye for detail. There is nothing left for you here. I was told to give you this code, though I must admit I don't know what it's for. https://tinyurl.com/y8funcmj"
+
 
 
 
@@ -128,7 +135,7 @@ const EGYPT_SPAWN = 4
 const END_SPAWN = 5
 
 
-
+console.log(`can wh=${canvas.width},${canvas.height}, origing=${ORIGIN.x},${ORIGIN.y}`)
 
 //#####################################
 // ENUMS
@@ -599,7 +606,6 @@ function portalCell(dir) {
 	let dy = Math.floor(Math.random() * CELL_SIZE)
 	points.push([dx,dy])
     }
-    console.log(points)
     cell.drawImg = function(x, y, alpha) {
 	drawGradientRect(x, y, PORTAL_COLOR, PORTAL_FADE_COLOR, dir)
 	//drawRect(x, y, BLUE)
@@ -987,7 +993,17 @@ function franceFloor() {
 function franceBigPillar() {
     let cell = Object.create(drawable)
     cell.drawImg = function(x, y, alpha) {
-	drawRect(x, y, FRANCE_OFF_COLOR)
+	drawRect(x, y, FRANCE_FLOOR_COLOR)
+	turtle.x = x
+	turtle.y = y
+	turtle.beginPath()
+	turtle.moveTo([HALF_CELL,0])
+	turtle.lineTo([HALF_CELL,HALF_CELL])
+	turtle.lineTo([-HALF_CELL, HALF_CELL])
+	turtle.lineTo([-HALF_CELL, - HALF_CELL])
+	turtle.lineTo([HALF_CELL, - HALF_CELL])
+	turtle.closePath()
+	turtle.fill(FRANCE_OFF_COLOR)
     }
     cell.isObstacle = true
     cell.isLink = false
@@ -995,11 +1011,26 @@ function franceBigPillar() {
 }
 
 function franceMedPillar() {
-    return franceBigPillar()
+     let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, FRANCE_FLOOR_COLOR)
+	drawGenRect(x, y + Math.floor(CELL_SIZE * 3 / 8), CELL_SIZE, Math.floor(CELL_SIZE / 4), FRANCE_OFF_COLOR)
+	drawGenRect(x + Math.floor(CELL_SIZE * 3 / 8), y, Math.floor(CELL_SIZE / 4), CELL_SIZE, FRANCE_OFF_COLOR)
+    }
+    cell.isObstacle = true
+    cell.isLink = false
+    return cell
 }
 
 function franceSmallPillar() {
-    return franceBigPillar()
+    let cell = Object.create(drawable)
+    cell.drawImg = function(x, y, alpha) {
+	drawRect(x, y, FRANCE_FLOOR_COLOR)
+	drawCircle(x + HALF_CELL, y + HALF_CELL, Math.floor(CELL_SIZE / 5), FRANCE_OFF_COLOR)
+    }
+    cell.isObstacle = true
+    cell.isLink = false
+    return cell
 }
 
 
@@ -1273,8 +1304,8 @@ function crossObj(row, col) {
 function ball(row, col, color) {
     let ball = Object.create(drawable)
     ball.drawImg = function(x, y, alpha) {
-	drawRect(x, y, FRANCE_FLOOR_COLOR)
-	drawCircle(x + HALF_CELL, y + HALF_CELL, Math.floor(HALF_CELL * 3 / 4, color))
+	//drawRect(x, y, FRANCE_FLOOR_COLOR)
+	drawCircle(x + HALF_CELL, y + HALF_CELL, Math.floor(HALF_CELL * 3 / 4), color)
     }
     ball.isMoving = false
     ball.contains = ball.singleCellContains
@@ -1726,18 +1757,21 @@ function wrapText(text, x, y, maxWidth, lineHeight, maxHeight) {
 
 function wrappedTextbox(text) {
     let x = ORIGIN.x
-    let y = ORIGIN.y + Math.floor(SCREEN.height / 2)
+    let y = ORIGIN.y + Math.floor(SCREEN.height * 3 / 4)
     let txtMargin = 20
-    let maxWidth = SCREEN.width - 2 * txtMargin
-    let maxHeight = Math.floor(SCREEN.height / 2) - 2 * txtMargin + y
+    let bd = 5
+    let maxWidth = SCREEN.width - txtMargin
+    let maxHeight = Math.floor(SCREEN.height / 4) - txtMargin + y
     let lineHeight = 30
     let orig = ctx.fillStyle
+    ctx.fillStyle = TEXT_BORDER_COLOR
+    ctx.fillRect(x, y, SCREEN.width, Math.floor(SCREEN.height / 4))
     ctx.fillStyle = TEXT_BACKGROUND_COLOR
-    ctx.fillRect(x, y, SCREEN.width, Math.floor(SCREEN.height / 2))
+    ctx.fillRect(x + bd, y + bd, SCREEN.width - 2 * bd, Math.floor(SCREEN.height / 4) - 2 * bd)
     ctx.fillStyle = TEXT_COLOR
     ctx.font = TEXT_FONT
     console.log(ctx.font)
-    let pnt = wrapText(text, x + txtMargin, y + txtMargin, maxWidth, lineHeight, maxHeight)
+    let pnt = wrapText(text, x + txtMargin, y + txtMargin + 10, maxWidth, lineHeight, maxHeight)
     ctx.fillStyle = orig
     console.log(pnt)
     return pnt
@@ -1832,11 +1866,11 @@ function rowRangePortal(row, fstCol, scnCol, world, spawn) {
 function checkFrontier(map, obj, row, col, dir) {
     var frontier = obj.getFrontier(dir)
     var v = true
-    console.log(`frontier = ${frontier} type=${typeof frontier}`)
+  //  console.log(`frontier = ${frontier} type=${typeof frontier}`)
     frontier.forEach(function(coord) {
 	let r = coord[0]
 	let c = coord[1]
-	console.log(`frontier r,c=${r},${c}`)
+	//console.log(`frontier r,c=${r},${c}`)
 	if (map.hasObstacleAt(r, c) || map.hasObjectTouching(r, c)) v = false
     })
     // console.log(`is obstacle or object on frontier? = ${v}`)
@@ -1923,25 +1957,27 @@ function frameShift(map, mapOrigin, dir, movingObjects, world) {
 	    //overWorld.player.inc(dir)
 	    world.draw()
 	    keyData.logic = prevLogic
+	    let wasTriggered = false
 	    world.map.triggers.forEach(function(trigger) {
 		if (trigger.isTriggered()) {
+		    wasTriggered = true
 		    trigger.onTrigger(world.eventLogic, world.overlayCallback)
-		    /*trigger.overlay.registerLogic(world.eventLogic)
-		    trigger.overlay.registerCallback(world.overlayCallback)
-		    trigger.overlay.step()*/
+		  
 		}
 	    })
+	    if (!wasTriggered) {
 	    //order of this logic is important. if portal, nothing else should happen
-	    if (world.isInPortal(player.row, player.col)) {
-		world.useActivePortal(player.row, player.col)
-	    }
-	    else {
-		//neither of these should block the other. prevents object drag
-		if (keyData.isKeyNew.get(GRAB)) {
-		    world.eventLogic(GRAB)
+		if (world.isInPortal(player.row, player.col)) {
+		    world.useActivePortal(player.row, player.col)
 		}
-		if (keyData.keyStack.length !== 0) {
-		    world.eventLogic(keyData.keyStack[keyData.keyStack.length - 1])
+		else {
+		//neither of these should block the other. prevents object drag
+		    if (keyData.isKeyNew.get(GRAB)) {
+			world.eventLogic(GRAB)
+		    }
+		    if (keyData.keyStack.length !== 0) {
+			world.eventLogic(keyData.keyStack[keyData.keyStack.length - 1])
+		    }
 		}
 	    }
 	}
@@ -2118,6 +2154,11 @@ function endMap() {
     map.triggers = []
     map.map = mapFromTemplate(mapData.get("end").template, endCellMap, END_FLOOR_COLOR)
     map.portals.push(rowRangePortal(13,8,11, overworld, END_SPAWN))
+    let overlay = textOverlay("Oh, well hello young champion. It seems you have a keen eye for detail. You have won a great victory from this forsaken place; there is nothing left for you here. I was told to give you this code, though I must admit I don't know what it's for. https://tinyurl.com/y8funcmj")
+    map.map.get(5,9).overlay = overlay
+    map.map.get(5,10).overlay = overlay
+    map.map.get(6,10).overlay = overlay
+    map.map.get(6,9).overlay = overlay
     return map
 }
 
@@ -2184,7 +2225,17 @@ function chartesMap() {
     map.ball2 = ball(9,39, RED)
     map.ball3 = ball(4,26, GREEN)
     map.cross = crossObj(44,26)
-    map.objList.push(map.cross)
+    if (questProgress.france == UNSOLVED) {
+	map.objList.push(map.cross)
+	map.ball1 = ball(9,13, BLUE)
+	map.ball2 = ball(9,39, RED)
+	map.ball3 = ball(4,26, GREEN)
+    }
+    else {
+	map.ball1 = ball(45,24, BLUE)
+	map.ball2 = ball(45,28, RED)
+	map.ball3 = ball(43,26, GREEN)
+    }
     map.objList.push(map.ball1)
     map.objList.push(map.ball2)
     map.objList.push(map.ball3)
@@ -2239,11 +2290,19 @@ function basilicaMap() {
     map.triggers = []
     map.map = mapFromTemplate(mapData.get("rome").template, romeCellMap, ROMAN_FLOOR_COLOR, VOID_COLOR)
     map.portals.push(rowPortal(64, overworld, ROME_SPAWN))
-    map.objList.push(basilicaCorner(24,25,[1,1]))
-    map.objList.push(basilicaCorner(40,25,[1,-1]))
-    map.objList.push(basilicaCorner(24,41,[-1,1]))
-    map.objList.push(basilicaCorner(40,41,[-1,-1]))
-
+    if (questProgress.rome == UNSOLVED) {
+	map.objList.push(basilicaCorner(24,25,[1,1]))
+	map.objList.push(basilicaCorner(40,25,[1,-1]))
+	map.objList.push(basilicaCorner(24,41,[-1,1]))
+	map.objList.push(basilicaCorner(40,41,[-1,-1]))
+    }
+    else {
+	map.objList.push(basilicaCorner(20,21,[1,1]))
+	map.objList.push(basilicaCorner(44,21,[1,-1]))
+	map.objList.push(basilicaCorner(20,45,[-1,1]))
+	map.objList.push(basilicaCorner(44,45,[-1,-1]))
+    }
+	
     var victoryTrigger = {
 	isTriggered: function() {
 	    //console.log("is trigger being called"
@@ -2365,7 +2424,7 @@ function overworldMap() {
     let map = Object.create(mapPrototype)
     map.rows = 17
     map.cols = 26 * 4
-    map.spawns = [[7,90],
+    map.spawns = [[10,6],
 		  [7,13],
 		  [7,26],
 		  [7,39],
@@ -2420,7 +2479,7 @@ var universe = {
 
 function createUniverse() {
     registerEventListeners()
-    universe.activeWorld = egypt(MAIN_SPAWN)
+    universe.activeWorld = overworld(MAIN_SPAWN)
     universe.startGame()
 }
 
@@ -2429,7 +2488,7 @@ function createUniverse() {
 // LOADING AJAX STUFF AND KICK STARTING THE GAME
 //############################################################################
 var ajaxCompleted = 0
-var ajaxMax = 5 //wtf why don't work?
+var ajaxMax = 6 //wtf why don't work?
 
 window.mobilecheck = function() {
   var check = false;
@@ -2438,10 +2497,12 @@ window.mobilecheck = function() {
 };
 
 if (window.mobilecheck()) {
-
+    document.getElementById("error").style.display = block
+    document.getElementById("canvas").style.display = none
 }
 else {
-
+    
+    
     for (const name of mapData.keys()) {
 	var req = new XMLHttpRequest()
 	req.addEventListener("load", function() {

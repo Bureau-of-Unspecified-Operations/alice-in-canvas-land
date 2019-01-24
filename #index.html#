@@ -12,7 +12,9 @@
 	<div class="center" >
 	    <canvas id="canvas"  class="center"></canvas>
 	</div>
-
+	<div class="center" id="error" style="display: none" >
+	    <p> We have no mobile support, so please use a laptop or desktop</p>
+	</div>
 	<script type ="text/javascript" src="index.js" ></script>
     </body>
 
